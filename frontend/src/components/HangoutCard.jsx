@@ -38,7 +38,7 @@ const HangoutCard = ({ hangout, onRsvp, currentUserId }) => {
               {/* Creator */}
               {creator && (
                 <div className="flex items-center gap-1.5 mt-1">
-                  <Avatar user={creator} size="xs" />
+                  <Avatar name={creator?.name} config={creator?.avatar_config || {}} size={20} />
                   <span className="text-[9px] text-white/30 font-bold">by {creator.name}</span>
                 </div>
               )}
@@ -61,7 +61,7 @@ const HangoutCard = ({ hangout, onRsvp, currentUserId }) => {
           <div className="flex -space-x-2 ml-auto">
             {going.slice(0, 4).map((r, i) => (
               <div key={i} className="w-7 h-7 rounded-full border-2 border-card overflow-hidden bg-card">
-                <Avatar user={r.user} size={28} />
+                <Avatar name={r.user?.name} config={r.user?.avatar_config || {}} size={28} />
               </div>
             ))}
             {going.length > 4 && (

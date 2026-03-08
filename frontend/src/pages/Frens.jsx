@@ -238,7 +238,7 @@ const Frens = () => {
                 {searchResults.map((user) => (
                   <div key={user.id} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-2xl transition-colors h-[56px]">
                     <div className="flex items-center gap-3">
-                      <Avatar user={user} size="md" />
+                      <Avatar name={user.name} config={user.avatar_config || {}} size={36} />
                       <div>
                         <h4 className="text-sm font-bold leading-none">{user.name}</h4>
                         <p className="text-[10px] opacity-30 mt-0.5 uppercase font-black">{user.email || 'no email'}</p>
@@ -277,7 +277,7 @@ const Frens = () => {
                 className="card-frens p-4 flex items-center justify-between animate-in slide-in-from-right duration-300 border border-primary-yellow/20 bg-primary-yellow/5"
               >
                 <div className="flex items-center gap-3">
-                  <Avatar user={req.from} size="md" />
+                <Avatar name={req.from?.name} config={req.from?.avatar_config || {}} size={40} />
                   <div>
                     <h4 className="font-display font-bold leading-none text-sm">{req.from?.name}</h4>
                     <p className="text-[10px] opacity-40 mt-0.5 font-black uppercase">{timeAgo(req.created_at)}</p>
@@ -307,7 +307,7 @@ const Frens = () => {
                 className="card-frens p-4 flex items-center justify-between opacity-60"
               >
                 <div className="flex items-center gap-3">
-                  <Avatar user={req.to} size="md" />
+                <Avatar name={req.to?.name} config={req.to?.avatar_config || {}} size={40} />
                   <div>
                     <h4 className="font-display font-bold leading-none text-sm">{req.to?.name}</h4>
                     <p className="text-[10px] text-primary-yellow font-black uppercase mt-0.5">⏳ Waiting...</p>
@@ -340,7 +340,7 @@ const Frens = () => {
             {frens.map((fren) => (
               <div key={fren.id} className="card-frens p-4 flex items-center justify-between group active:scale-[0.98] transition-all duration-200">
                 <div className="flex items-center gap-4">
-                  <Avatar user={fren} size="md" showStatus={true} />
+                  <Avatar name={fren.name} config={fren.avatar_config || {}} size={44} status={fren.status} />
                   <div>
                     <h4 className="font-display font-bold leading-none">{fren.name}</h4>
                     <p className="text-[8px] font-black uppercase text-primary-green tracking-widest mt-1">

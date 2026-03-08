@@ -31,7 +31,7 @@ const AvatarRow = ({ rsvps, size = 'sm', max = 6 }) => {
     <div className="flex -space-x-2 items-center">
       {visible.map((r, i) => (
         <div key={i} title={r.user?.name} className="border-2 border-background rounded-full overflow-hidden flex-shrink-0">
-          <Avatar user={r.user} size={size} />
+          <Avatar name={r.user?.name} config={r.user?.avatar_config || {}} size={size} />
         </div>
       ))}
       {extra > 0 && <div className="w-7 h-7 rounded-full border-2 border-background bg-white/10 flex items-center justify-center text-[9px] font-black ml-1">+{extra}</div>}
@@ -69,7 +69,7 @@ const IdeaCard = ({ idea, hangoutId, currentUserId, onVoted }) => {
         </div>
         {idea.creator && (
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <Avatar user={idea.creator} size="xs" />
+            <Avatar name={idea.creator?.name} config={idea.creator?.avatar_config || {}} size={24} />
             <span className="text-[8px] opacity-30 font-black uppercase">{idea.creator.name?.split(' ')[0]}</span>
           </div>
         )}
@@ -177,7 +177,7 @@ const CoHostModal = ({ hangoutId, currentHosts, onClose, onAdded }) => {
             return (
               <div key={f.id} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-2xl">
                 <div className="flex items-center gap-3">
-                  <Avatar user={f} size="md" />
+                  <Avatar name={f.name} config={f.avatar_config || {}} size={40} />
                   <span className="font-bold text-sm">{f.name}</span>
                   {isHost && <span className="text-[8px] bg-primary-yellow/20 text-primary-yellow font-black uppercase px-2 py-0.5 rounded-full">👑 Host</span>}
                 </div>
@@ -296,7 +296,7 @@ const HangoutDetail = () => {
             {/* Creator row */}
             {hangout.creator && (
               <div className="flex items-center gap-1.5 mt-2">
-                <Avatar user={hangout.creator} size="xs" />
+                <Avatar name={hangout.creator?.name} config={hangout.creator?.avatar_config || {}} size={24} />
                 <span className="text-[10px] font-black uppercase opacity-40">by {hangout.creator.name}</span>
               </div>
             )}
@@ -323,7 +323,7 @@ const HangoutDetail = () => {
               {hangout.hosts.map((h, i) => (
                 <div key={i} className="relative">
                   <div className="border-2 border-background rounded-full overflow-hidden">
-                    <Avatar user={h.user} size="sm" />
+                    <Avatar name={h.user?.name} config={h.user?.avatar_config || {}} size={32} />
                   </div>
                   <span className="absolute -top-1 -right-1 text-[8px]">👑</span>
                 </div>
@@ -366,7 +366,7 @@ const HangoutDetail = () => {
               <div className="flex flex-wrap gap-3">
                 {going.map((r, i) => (
                   <div key={i} className="flex flex-col items-center gap-1">
-                    <Avatar user={r.user} size="md" showStatus />
+                    <Avatar name={r.user?.name} config={r.user?.avatar_config || {}} size={44} status={r.user?.status} />
                     <span className="text-[8px] font-black uppercase opacity-40">{r.user?.name?.split(' ')[0]}</span>
                   </div>
                 ))}
@@ -383,7 +383,7 @@ const HangoutDetail = () => {
               <div className="flex flex-wrap gap-3">
                 {interested.map((r, i) => (
                   <div key={i} className="flex flex-col items-center gap-1 opacity-70">
-                    <Avatar user={r.user} size="sm" />
+                    <Avatar name={r.user?.name} config={r.user?.avatar_config || {}} size={32} />
                     <span className="text-[8px] font-black uppercase opacity-40">{r.user?.name?.split(' ')[0]}</span>
                   </div>
                 ))}
@@ -398,7 +398,7 @@ const HangoutDetail = () => {
               <div className="flex flex-wrap gap-2">
                 {notGoing.map((r, i) => (
                   <div key={i} className="opacity-30">
-                    <Avatar user={r.user} size="xs" />
+                    <Avatar name={r.user?.name} config={r.user?.avatar_config || {}} size={24} />
                   </div>
                 ))}
               </div>

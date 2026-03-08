@@ -3,8 +3,8 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-le
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getNearby, pingFren } from '../lib/api'
+import { buildAvatarUrl } from '../lib/avatar'
 import { useStore } from '../store/useStore'
-import { getAvatarUrl } from '../lib/avatar'
 import Avatar from '../components/Avatar'
 import Skeleton from '../components/Skeleton'
 
@@ -31,7 +31,7 @@ const clusterIcon = (frens) => {
 
   // Stacked avatar images — each offset slightly
   const imgs = visible.map((f, i) => {
-    const url = getAvatarUrl(f, 80)
+    const url = buildAvatarUrl(f.name, f.avatar_config || {})
     const offset = i * 16
     return `<img src="${url}" style="
       position:absolute;
@@ -229,7 +229,7 @@ const Nearby = () => {
                     {cluster.frens.map(f => (
                       <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <img
-                          src={getAvatarUrl(f, 40)}
+                          src={buildAvatarUrl(f.name, f.avatar_config || {})}
                           style={{ width: 28, height: 28, borderRadius: '50%', background: '#1a1428' }}
                           alt={f.name}
                         />
@@ -286,16 +286,28 @@ const Nearby = () => {
           <div className="space-y-4">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-20" />)}
           </div>
+        ) : mode === 'ghost' ? (
+          <div className="text-center py-16 space-y-4">
+            <span className="text-6xl block animate-bounce">👻</span>
+            <p className="font-display font-black italic text-xl text-primary-purple">Ghost Mode</p>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">You can see frens,<br />but they can’t see you</p>
+          </div>
+        ) : mode === 'inv' ? (
+          <div className="text-center py-16 space-y-4">
+            <span className="text-6xl block grayscale opacity-50">🫥</span>
+            <p className="font-display font-black italic text-xl opacity-30">Invisible Mode</p>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-20">You’re completely hidden.<br />Enable a mode to see frens.</p>
+          </div>
         ) : (
           <div className="space-y-3">
             {frens.map(f => (
               <div key={f.id} className="card-frens p-4 flex items-center justify-between group">
                 <div className="flex items-center gap-4">
-                  <Avatar user={f} size="md" showStatus={true} />
+                  <Avatar name={f.name} config={f.avatar_config || {}} size={48} status={f.status} />
                   <div>
                     <h4 className="font-display font-bold leading-none">{f.name}</h4>
                     <p className="text-[10px] font-black uppercase opacity-20 mt-1">
-                      {f.distance || '?'} away · {f.lastSeen || f.status || 'unknown'}
+                      {f.distance || '?'} away · {f.lastSeen || 'unknown'}
                     </p>
                   </div>
                 </div>

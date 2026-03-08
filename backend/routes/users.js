@@ -68,4 +68,19 @@ router.get('/stats', authMiddleware, async (req, res) => {
   }
 })
 
+/**
+ * Update avatar config (customisation JSON)
+ */
+router.patch('/avatar-config', authMiddleware, async (req, res) => {
+  try {
+    const { config } = req.body
+    if (!config) return res.status(400).json({ error: 'config required' })
+    const { error } = await supabase.from('users').update({ avatar_config: config }).eq('id', req.user.id)
+    if (error) throw error
+    res.json({ success: true, avatar_config: config })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 export default router

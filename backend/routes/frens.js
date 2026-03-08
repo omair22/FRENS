@@ -15,7 +15,7 @@ router.get('/search', authMiddleware, async (req, res) => {
 
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, email, status, avatar_style')
+      .select('id, name, email, status, avatar_style, avatar_config')
       .or(`name.ilike.%${q}%,email.ilike.%${q}%`)
       .neq('id', req.user.id)
       .limit(10)
@@ -84,7 +84,7 @@ router.get('/requests', authMiddleware, async (req, res) => {
     if (allIds.length > 0) {
       const { data } = await supabase
         .from('users')
-        .select('id, name, email, status, avatar_style')
+        .select('id, name, email, status, avatar_style, avatar_config')
         .in('id', allIds)
       users = data || []
     }
@@ -119,7 +119,7 @@ router.get('/', authMiddleware, async (req, res) => {
     const frenIds = friendships.map(f => f.fren_id)
     const { data: frens } = await supabase
       .from('users')
-      .select('id, name, email, status, avatar_style')
+      .select('id, name, email, status, avatar_style, avatar_config')
       .in('id', frenIds)
 
     res.json(frens || [])

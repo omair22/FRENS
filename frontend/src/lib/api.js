@@ -128,6 +128,10 @@ export const setBulkAvailability = (dates) =>
 export const updateStatus = (status) => 
   api.patch('/users/status', { status })
 
+export const updateAvatarConfig = (config) =>
+  api.patch('/users/avatar-config', { config })
+
+
 export const getUserStats = () => 
   api.get('/users/stats')
 
