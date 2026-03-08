@@ -6,7 +6,7 @@ const router = express.Router()
 
 /** Haversine formula — returns distance in miles */
 const haversine = (lat1, lng1, lat2, lng2) => {
-  const R = 3958.8 // Earth radius in miles
+  const R = 3958.8
   const dLat = (lat2 - lat1) * Math.PI / 180
   const dLng = (lng2 - lng1) * Math.PI / 180
   const a =
@@ -18,49 +18,66 @@ const haversine = (lat1, lng1, lat2, lng2) => {
 }
 
 /**
- * GET /api/nearby?lat=X&lng=Y
- * 1. Saves the caller's current coordinates
- * 2. Returns nearby frens with real distances
+ * GET /api/nearby?lat=X&lng=Y&mode=out|ghost|invisible
+ *
+ * Modes:
+ *  out       — share your location, appear to others, see others ✅
+ *  ghost     — still see others, but YOU are hidden from theirs 👻
+ *  invisible — completely offline: location cleared, see no one   🫥
  */
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const lat = parseFloat(req.query.lat)
-    const lng = parseFloat(req.query.lng)
+    const lat  = parseFloat(req.query.lat)
+    const lng  = parseFloat(req.query.lng)
+    const mode = req.query.mode || 'out'  // 'out' | 'ghost' | 'invisible'
 
     if (isNaN(lat) || isNaN(lng)) {
       return res.status(400).json({ error: 'lat and lng are required' })
     }
 
-    // 1. Save this user's current location
+    // 1. Update the user's location + mode in the DB
+    if (mode === 'invisible') {
+      // Clear coordinates so they vanish from everyone else's radar
+      await supabase
+        .from('users')
+        .update({ lat: null, lng: null, location_mode: 'invisible' })
+        .eq('id', req.user.id)
+
+      // Invisible users see nobody
+      return res.json([])
+    }
+
+    // For 'out' and 'ghost': save location, save mode
     await supabase
       .from('users')
-      .update({ lat, lng, location_updated_at: new Date().toISOString() })
+      .update({ lat, lng, location_updated_at: new Date().toISOString(), location_mode: mode })
       .eq('id', req.user.id)
 
-    // 2. Get fren IDs
+    // 2. Get accepted fren IDs
     const { data: friendships } = await supabase
       .from('friendships')
       .select('fren_id')
       .eq('user_id', req.user.id)
+      .eq('status', 'accepted')
 
     const frenIds = (friendships || []).map(f => f.fren_id)
     if (frenIds.length === 0) return res.json([])
 
-    // 3. Get frens with their stored coordinates
+    // 3. Fetch frens — only those in 'out' mode (ghost + invisible are hidden from your list)
     const { data: frens, error } = await supabase
       .from('users')
-      .select('id, name, emoji, status, lat, lng, location_updated_at')
+      .select('id, name, avatar_style, status, lat, lng, location_updated_at, location_mode')
       .in('id', frenIds)
-      .neq('status', 'invisible')
+      .eq('location_mode', 'out')   // hidden users don't appear
+      .not('lat', 'is', null)
+      .not('lng', 'is', null)
 
     if (error) throw error
 
-    // 4. Calculate real distances, filter out frens with no location
+    // 4. Compute real distances
     const result = (frens || [])
-      .filter(f => f.lat !== null && f.lng !== null)
       .map(f => {
         const dist = haversine(lat, lng, f.lat, f.lng)
-        // How stale is their location?
         const minutesAgo = f.location_updated_at
           ? Math.floor((Date.now() - new Date(f.location_updated_at)) / 60000)
           : null
@@ -68,7 +85,7 @@ router.get('/', authMiddleware, async (req, res) => {
         return {
           id: f.id,
           name: f.name,
-          emoji: f.emoji,
+          avatar_style: f.avatar_style,
           status: f.status,
           lat: f.lat,
           lng: f.lng,
@@ -77,7 +94,7 @@ router.get('/', authMiddleware, async (req, res) => {
             : `${dist.toFixed(1)} mi`,
           distanceMiles: dist,
           lastSeen: minutesAgo !== null
-            ? minutesAgo < 1 ? 'Just now'
+            ? minutesAgo < 1  ? 'Just now'
             : minutesAgo < 60 ? `${minutesAgo}m ago`
             : `${Math.floor(minutesAgo / 60)}h ago`
             : 'Unknown',

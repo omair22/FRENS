@@ -68,6 +68,27 @@ export const uploadPhoto = (hangoutId, file) => {
 export const getPhotos = (hangoutId) => 
   api.get(`/hangouts/${hangoutId}/photos`)
 
+export const deleteHangout = (id) =>
+  api.delete(`/hangouts/${id}`)
+
+export const toggleVisibility = (id, is_public) =>
+  api.patch(`/hangouts/${id}/visibility`, { is_public })
+
+export const updateHangoutStatus = (id, status) =>
+  api.patch(`/hangouts/${id}/status`, { status })
+
+export const addHost = (hangoutId, userId) =>
+  api.post(`/hangouts/${hangoutId}/hosts`, { userId })
+
+export const removeHost = (hangoutId, userId) =>
+  api.delete(`/hangouts/${hangoutId}/hosts/${userId}`)
+
+export const addIdea = (hangoutId, data) =>
+  api.post(`/hangouts/${hangoutId}/ideas`, data)
+
+export const voteOnIdea = (hangoutId, ideaId, vote) =>
+  api.post(`/hangouts/${hangoutId}/ideas/${ideaId}/vote`, { vote })
+
 // Frens
 export const getFrends = () => 
   api.get('/frens')
@@ -80,6 +101,15 @@ export const addFren = (frenId) =>
 
 export const removeFren = (id) => 
   api.delete(`/frens/${id}`)
+
+export const getFrenRequests = () =>
+  api.get('/frens/requests')
+
+export const acceptFrenRequest = (requestId) =>
+  api.post('/frens/accept', { requestId })
+
+export const declineFrenRequest = (requestId) =>
+  api.post('/frens/decline', { requestId })
 
 export const pingFren = (id) => 
   api.post(`/frens/${id}/ping`)
@@ -109,8 +139,8 @@ export const getNudge = (hangoutId) =>
   api.post(`/ai/nudge/${hangoutId}`)
 
 // Nearby
-export const getNearby = (lat, lng) => 
-  api.get(`/nearby?lat=${lat}&lng=${lng}`)
+export const getNearby = (lat, lng, mode = 'out') => 
+  api.get(`/nearby?lat=${lat}&lng=${lng}&mode=${mode}`)
 
 // Aliases for backward compatibility and mismatched imports across pages
 export const getAiSuggestion = getSuggest

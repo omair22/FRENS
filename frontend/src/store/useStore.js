@@ -8,16 +8,17 @@ export const useStore = create(
       frens: [],
       hangouts: [],
       availability: {},
-      toast: null, // { message, type }
+      toast: null,
+      pendingRequestCount: 0,
       
       setUser: (user) => set({ user }),
       setFrens: (frens) => set({ frens }),
       setHangouts: (hangouts) => set({ hangouts }),
       setAvailability: (availability) => set({ availability }),
+      setPendingRequestCount: (pendingRequestCount) => set({ pendingRequestCount }),
       setToast: (toast) => {
         set({ toast })
         if (toast) {
-          // Auto-clear toast after 3s
           setTimeout(() => set({ toast: null }), 3000)
         }
       },

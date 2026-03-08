@@ -5,70 +5,123 @@ import { authMiddleware } from '../middleware/auth.js'
 const router = express.Router()
 
 /**
- * 1. Search users (STATIC ROUTE FIRST)
  * GET /api/frens/search?q=VALUE
+ * Returns users with relationship status for each result
  */
 router.get('/search', authMiddleware, async (req, res) => {
   try {
     const { q } = req.query
-
-    if (!q || q.length < 2) {
-      return res.json([])
-    }
+    if (!q || q.length < 2) return res.json([])
 
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, emoji, email, status')
+      .select('id, name, email, status, avatar_style')
       .or(`name.ilike.%${q}%,email.ilike.%${q}%`)
       .neq('id', req.user.id)
       .limit(10)
 
     if (error) throw error
 
-    // Check which ones are already frens
-    const { data: existingFrens } = await supabase
+    // Get all relationships with these users (both directions)
+    const userIds = data.map(u => u.id)
+    if (userIds.length === 0) return res.json([])
+
+    const { data: relationships } = await supabase
       .from('friendships')
-      .select('fren_id')
-      .eq('user_id', req.user.id)
+      .select('id, user_id, fren_id, status')
+      .or(
+        userIds.map(id =>
+          `and(user_id.eq.${req.user.id},fren_id.eq.${id}),and(user_id.eq.${id},fren_id.eq.${req.user.id})`
+        ).join(',')
+      )
 
-    const frenIds = existingFrens?.map(f => f.fren_id) || []
+    const results = data.map(user => {
+      const rel = (relationships || []).find(
+        r => (r.user_id === req.user.id && r.fren_id === user.id) ||
+             (r.user_id === user.id && r.fren_id === req.user.id)
+      )
 
-    const results = data.map(user => ({
-      ...user,
-      isAlreadyFren: frenIds.includes(user.id)
-    }))
+      let relationshipStatus = 'none'
+      let requestId = null
+      if (rel) {
+        if (rel.status === 'accepted') {
+          relationshipStatus = 'accepted'
+        } else if (rel.status === 'pending' && rel.user_id === req.user.id) {
+          relationshipStatus = 'pending_sent'
+          requestId = rel.id
+        } else if (rel.status === 'pending' && rel.fren_id === req.user.id) {
+          relationshipStatus = 'pending_received'
+          requestId = rel.id
+        }
+      }
+
+      return { ...user, relationshipStatus, requestId }
+    })
 
     res.json(results)
   } catch (err) {
-    console.error('Search error:', err)
+    console.error('[SEARCH]', err)
     res.status(500).json({ error: err.message })
   }
 })
 
 /**
- * 2. Get all frens
+ * GET /api/frens/requests
+ * Get incoming + outgoing pending requests
+ */
+router.get('/requests', authMiddleware, async (req, res) => {
+  try {
+    const [{ data: incoming }, { data: outgoing }] = await Promise.all([
+      supabase.from('friendships').select('id, user_id, created_at').eq('fren_id', req.user.id).eq('status', 'pending'),
+      supabase.from('friendships').select('id, fren_id, created_at').eq('user_id', req.user.id).eq('status', 'pending'),
+    ])
+
+    const incomingUserIds = (incoming || []).map(r => r.user_id)
+    const outgoingUserIds = (outgoing || []).map(r => r.fren_id)
+    const allIds = [...new Set([...incomingUserIds, ...outgoingUserIds])]
+
+    let users = []
+    if (allIds.length > 0) {
+      const { data } = await supabase
+        .from('users')
+        .select('id, name, email, status, avatar_style')
+        .in('id', allIds)
+      users = data || []
+    }
+
+    const byId = (id) => users.find(u => u.id === id)
+
+    res.json({
+      incoming: (incoming || []).map(r => ({ requestId: r.id, from: byId(r.user_id), created_at: r.created_at, type: 'incoming' })),
+      outgoing: (outgoing || []).map(r => ({ requestId: r.id, to: byId(r.fren_id), created_at: r.created_at, type: 'outgoing' })),
+    })
+  } catch (err) {
+    console.error('[REQUESTS]', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/**
  * GET /api/frens/
+ * Only return ACCEPTED frens
  */
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    // Step 1: get fren IDs
-    const { data: friendships, error: fError } = await supabase
+    const { data: friendships, error } = await supabase
       .from('friendships')
       .select('fren_id')
       .eq('user_id', req.user.id)
+      .eq('status', 'accepted')
 
-    if (fError) throw fError
+    if (error) throw error
     if (!friendships || friendships.length === 0) return res.json([])
 
-    // Step 2: get user data for those IDs
     const frenIds = friendships.map(f => f.fren_id)
-
-    const { data: frens, error: uError } = await supabase
+    const { data: frens } = await supabase
       .from('users')
-      .select('id, name, emoji, status, email')
+      .select('id, name, email, status, avatar_style')
       .in('id', frenIds)
 
-    if (uError) throw uError
     res.json(frens || [])
   } catch (err) {
     console.error('[FRENS GET]', err)
@@ -77,52 +130,95 @@ router.get('/', authMiddleware, async (req, res) => {
 })
 
 /**
- * 3. Add a fren (Bidirectional)
- * POST /api/frens/add
+ * POST /api/frens/add — Send a fren request
  */
 router.post('/add', authMiddleware, async (req, res) => {
-  const { frenId } = req.body
-  if (!frenId) return res.status(400).json({ error: 'frenId is required' })
-
   try {
-    // Check if users exist and are not already frens
+    const { frenId } = req.body
+    if (!frenId) return res.status(400).json({ error: 'frenId required' })
+    if (frenId === req.user.id) return res.status(400).json({ error: 'Cannot add yourself' })
+
     const { data: existing } = await supabase
       .from('friendships')
-      .select('*')
-      .eq('user_id', req.user.id)
-      .eq('fren_id', frenId)
-      .single()
+      .select('id, status, user_id, fren_id')
+      .or(
+        `and(user_id.eq.${req.user.id},fren_id.eq.${frenId}),` +
+        `and(user_id.eq.${frenId},fren_id.eq.${req.user.id})`
+      )
 
-    if (existing) return res.status(400).json({ error: 'Already frens' })
+    if (existing && existing.length > 0) {
+      const rel = existing[0]
+      if (rel.status === 'accepted') return res.status(400).json({ error: 'Already frens' })
+      if (rel.status === 'pending' && rel.user_id === req.user.id) return res.status(400).json({ error: 'Request already sent' })
 
-    // Insert both directions
-    const { error: insertError } = await supabase
-      .from('friendships')
-      .insert([
-        { user_id: req.user.id, fren_id: frenId },
-        { user_id: frenId, fren_id: req.user.id }
-      ])
+      // They already sent YOU a request — auto accept
+      if (rel.status === 'pending' && rel.fren_id === req.user.id) {
+        await supabase.from('friendships').update({ status: 'accepted', responded_at: new Date().toISOString() }).eq('id', rel.id)
+        await supabase.from('friendships').insert({ user_id: req.user.id, fren_id: frenId, status: 'accepted', requested_by: req.user.id, responded_at: new Date().toISOString() })
+        return res.json({ success: true, status: 'accepted', message: 'Auto-accepted! You both added each other 🎉' })
+      }
+    }
+
+    const { data: targetUser } = await supabase.from('users').select('id, name').eq('id', frenId).single()
+    if (!targetUser) return res.status(404).json({ error: 'User not found' })
+
+    const { error: insertError } = await supabase.from('friendships').insert({
+      user_id: req.user.id, fren_id: frenId, status: 'pending', requested_by: req.user.id
+    })
 
     if (insertError) throw insertError
-
-    // Fetch the target user to return in the response
-    const { data: targetUser } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', frenId)
-      .single()
-
-    res.status(201).json({ 
-      success: true, 
-      fren: targetUser
-    })
+    res.json({ success: true, status: 'pending', message: `Fren request sent to ${targetUser.name}! ⏳` })
   } catch (err) {
+    console.error('[ADD FREN]', err)
     res.status(500).json({ error: err.message })
   }
 })
 
 /**
- * 4. Ping a fren (Parameterized route AFTER static routes)
+ * POST /api/frens/accept
+ */
+router.post('/accept', authMiddleware, async (req, res) => {
+  try {
+    const { requestId } = req.body
+    if (!requestId) return res.status(400).json({ error: 'requestId required' })
+
+    const { data: request, error: findError } = await supabase
+      .from('friendships').select('*').eq('id', requestId).eq('fren_id', req.user.id).eq('status', 'pending').single()
+
+    if (findError || !request) return res.status(404).json({ error: 'Request not found' })
+
+    await supabase.from('friendships').update({ status: 'accepted', responded_at: new Date().toISOString() }).eq('id', requestId)
+    await supabase.from('friendships').insert({ user_id: req.user.id, fren_id: request.user_id, status: 'accepted', requested_by: request.user_id, responded_at: new Date().toISOString() })
+
+    const { data: newFren } = await supabase.from('users').select('id, name, email, status, avatar_style').eq('id', request.user_id).single()
+    res.json({ success: true, fren: newFren })
+  } catch (err) {
+    console.error('[ACCEPT]', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/**
+ * POST /api/frens/decline
+ */
+router.post('/decline', authMiddleware, async (req, res) => {
+  try {
+    const { requestId } = req.body
+    if (!requestId) return res.status(400).json({ error: 'requestId required' })
+
+    const { error } = await supabase.from('friendships')
+      .update({ status: 'declined', responded_at: new Date().toISOString() })
+      .eq('id', requestId).eq('fren_id', req.user.id).eq('status', 'pending')
+
+    if (error) throw error
+    res.json({ success: true })
+  } catch (err) {
+    console.error('[DECLINE]', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/**
  * POST /api/frens/:id/ping
  */
 router.post('/:id/ping', authMiddleware, async (req, res) => {
@@ -130,16 +226,12 @@ router.post('/:id/ping', authMiddleware, async (req, res) => {
 })
 
 /**
- * 5. Remove a fren (Parameterized route AFTER static routes)
- * DELETE /api/frens/:id
+ * DELETE /api/frens/:id — Remove a fren (both directions)
  */
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    const { error } = await supabase
-      .from('friendships')
-      .delete()
+    const { error } = await supabase.from('friendships').delete()
       .or(`and(user_id.eq.${req.user.id},fren_id.eq.${req.params.id}),and(user_id.eq.${req.params.id},fren_id.eq.${req.user.id})`)
-
     if (error) throw error
     res.json({ message: 'Removed' })
   } catch (err) {

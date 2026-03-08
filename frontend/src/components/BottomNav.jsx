@@ -1,12 +1,31 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
+import { getFrenRequests } from '../lib/api'
+import { useStore } from '../store/useStore'
 
 const BottomNav = () => {
+  const { pendingRequestCount, setPendingRequestCount } = useStore()
+
+  const fetchRequestCount = async () => {
+    try {
+      const res = await getFrenRequests()
+      setPendingRequestCount(res.data.incoming?.length || 0)
+    } catch (err) {
+      // silently fail — user may not be authed yet
+    }
+  }
+
+  useEffect(() => {
+    fetchRequestCount()
+    const interval = setInterval(fetchRequestCount, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
   const items = [
     { path: '/', label: 'Feed', icon: '🏠' },
     { path: '/nearby', label: 'Nearby', icon: '📍' },
     { path: '/new', label: '+', isFab: true },
-    { path: '/frens', label: 'Frens', icon: '👥' },
+    { path: '/frens', label: 'Frens', icon: '👥', badge: pendingRequestCount },
     { path: '/profile', label: 'Profile', icon: '👤' },
   ]
 
@@ -32,12 +51,16 @@ const BottomNav = () => {
               key={item.path}
               to={item.path}
               className={({ isActive }) => `
-                flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300
+                relative flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300
                 ${isActive ? 'bg-primary-red/10 text-primary-red scale-110' : 'text-white/30'}
               `}
             >
               <span className="text-xl mb-0.5">{item.icon}</span>
-              {/* <span className="text-[8px] font-black uppercase tracking-tighter">{item.label}</span> */}
+              {item.badge > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary-red rounded-full text-background text-[9px] font-black flex items-center justify-center border-2 border-background animate-in zoom-in duration-300">
+                  {item.badge > 9 ? '9+' : item.badge}
+                </span>
+              )}
             </NavLink>
           )
         ))}

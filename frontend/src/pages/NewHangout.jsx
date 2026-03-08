@@ -15,6 +15,7 @@ const NewHangout = () => {
     isTbd: false,
     invitedFrens: []
   })
+  const [isPublic, setIsPublic] = useState(false)
 
   // Date/time picker state
   const [selectedDate, setSelectedDate] = useState(null)
@@ -55,7 +56,8 @@ const NewHangout = () => {
         emoji: form.emoji,
         location: form.location,
         datetime: form.isTbd ? null : buildDatetime(),
-        notes: form.notes
+        notes: form.notes,
+        is_public: isPublic
       }
       
       const res = await createHangout(payload)
@@ -277,8 +279,25 @@ const NewHangout = () => {
           </div>
         </div>
 
-        <button 
-          type="submit" 
+        {/* Public / Private toggle */}
+        <div className="flex items-center justify-between p-4 bg-card rounded-2xl border border-white/10">
+          <div>
+            <p className="font-bold text-sm">{isPublic ? '🌍 Public' : '🔒 Private'}</p>
+            <p className="text-[10px] text-white/30 mt-0.5">
+              {isPublic ? 'Anyone can see and join this hangout' : 'Only invited frens can see this'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsPublic(!isPublic)}
+            className={`w-12 h-6 rounded-full transition-colors relative flex-shrink-0 ${isPublic ? 'bg-primary-green' : 'bg-white/10'}`}
+          >
+            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isPublic ? 'left-7' : 'left-1'}`} />
+          </button>
+        </div>
+
+        <button
+          type="submit"
           disabled={loading}
           className="w-full btn-primary bg-gradient-to-r from-primary-red to-primary-yellow text-background shadow-xl shadow-primary-red/20"
         >

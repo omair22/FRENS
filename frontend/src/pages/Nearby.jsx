@@ -121,17 +121,18 @@ const Nearby = () => {
   const { user, setToast } = useStore()
   const [frens, setFrens] = useState([])
   const [loading, setLoading] = useState(true)
-  const [mode, setMode] = useState('out')
+  const [mode, setMode] = useState(() => localStorage.getItem('location_mode') || 'out')
   const [coords, setCoords] = useState(null)
   const [locationError, setLocationError] = useState(false)
 
+  // Initial geolocation
   useEffect(() => {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const c = { lat: pos.coords.latitude, lng: pos.coords.longitude }
           setCoords(c)
-          fetchNearby(c.lat, c.lng)
+          fetchNearby(c.lat, c.lng, mode)
         },
         (err) => {
           console.error(err)
@@ -143,9 +144,18 @@ const Nearby = () => {
     }
   }, [])
 
-  const fetchNearby = async (lat, lng) => {
+  // Re-fetch whenever mode changes (if we already have coords)
+  useEffect(() => {
+    localStorage.setItem('location_mode', mode)
+    if (coords) {
+      setLoading(true)
+      fetchNearby(coords.lat, coords.lng, mode)
+    }
+  }, [mode])
+
+  const fetchNearby = async (lat, lng, currentMode) => {
     try {
-      const res = await getNearby(lat, lng)
+      const res = await getNearby(lat, lng, currentMode)
       setFrens(res.data)
     } catch (err) {
       console.error(err)
@@ -234,9 +244,21 @@ const Nearby = () => {
           </MapContainer>
         )}
 
-        {/* Overlay */}
+        {/* Overlay: title + mode toggle */}
         <div className="absolute bottom-5 left-4 right-4 flex items-end justify-between z-[999] pointer-events-none">
-          <h1 className="text-3xl font-display font-black italic drop-shadow-lg">NEARBY</h1>
+          <div>
+            <h1 className="text-3xl font-display font-black italic drop-shadow-lg">NEARBY</h1>
+            {mode === 'ghost' && (
+              <span className="text-[9px] font-black uppercase tracking-widest text-primary-purple bg-primary-purple/20 px-2 py-0.5 rounded-full">
+                👻 Hidden from others
+              </span>
+            )}
+            {mode === 'inv' && (
+              <span className="text-[9px] font-black uppercase tracking-widest text-white/40 bg-white/5 px-2 py-0.5 rounded-full">
+                🫥 Fully invisible
+              </span>
+            )}
+          </div>
           <div className="bg-background/80 backdrop-blur rounded-2xl p-1 flex border border-white/5 pointer-events-auto">
             {[['out','🟢'],['ghost','👻'],['inv','🫥']].map(([m, icon]) => (
               <button

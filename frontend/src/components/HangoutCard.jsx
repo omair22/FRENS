@@ -1,80 +1,87 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import Avatar from './Avatar'
 import RsvpButtons from './RsvpButtons'
 
-const HangoutCard = ({ hangout, onRsvp }) => {
-  const { id, title, emoji, location, datetime, rsvps, vibe_options } = hangout
-  
-  const going = rsvps?.filter(r => r.response === 'going') || []
-  const interested = rsvps?.filter(r => r.response === 'interested') || []
-  
-  const dateObj = datetime ? new Date(datetime) : null
-  const dateString = dateObj 
-    ? dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-    : 'TBD 🗓️'
-  const timeString = dateObj
-    ? dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-    : ''
+const HangoutCard = ({ hangout, onRsvp, currentUserId }) => {
+  const { id, title, emoji, location, datetime, rsvps, creator, is_public } = hangout
 
-  const myRsvp = rsvps?.find(r => r.user_id === hangout.my_id)?.response
+  const going      = rsvps?.filter(r => r.response === 'going'      || r.response === 'in')      || []
+  const interested = rsvps?.filter(r => r.response === 'interested')                              || []
+  const notGoing   = rsvps?.filter(r => r.response === 'skip'       || r.response === 'out')      || []
+
+  const dateObj    = datetime ? new Date(datetime) : null
+  const dateString = dateObj ? dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'TBD 🗓️'
+  const timeString = dateObj ? dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : ''
+
+  const myRsvp = rsvps?.find(r => r.user_id === currentUserId)?.response
 
   return (
     <div className="card-frens group relative overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-700">
-      {/* Status Bar */}
+      {/* Left accent bar */}
       <div className="absolute top-0 left-0 w-1 h-full bg-primary-red shadow-[0_0_15px_rgba(255,107,107,0.5)]" />
-      
+
       <Link to={`/hangout/${id}`} className="block space-y-4">
+        {/* Header row */}
         <div className="flex justify-between items-start">
           <div className="flex gap-4">
             <span className="text-5xl drop-shadow-2xl transition-transform group-hover:scale-110 duration-500">
               {emoji || '✨'}
             </span>
-            <div>
-              <h3 className="text-xl font-display font-black leading-none mb-1 group-hover:text-primary-red transition-colors">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xl font-display font-black leading-none mb-1 group-hover:text-primary-red transition-colors truncate">
                 {title}
               </h3>
               <p className="text-[10px] font-black uppercase tracking-widest text-white/30 flex items-center gap-1">
                 📍 {location || 'TBD'}
               </p>
+              {/* Creator */}
+              {creator && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Avatar user={creator} size="xs" />
+                  <span className="text-[9px] text-white/30 font-bold">by {creator.name}</span>
+                </div>
+              )}
             </div>
           </div>
+          {/* Visibility badge */}
+          <span className="text-[8px] font-black uppercase px-2 py-1 rounded-full bg-white/5 text-white/30 flex-shrink-0">
+            {is_public ? '🌍' : '🔒'}
+          </span>
         </div>
 
+        {/* Date + attendee stacks */}
         <div className="flex items-center gap-2">
           <div className="bg-white/5 rounded-2xl px-4 py-2 flex flex-col">
             <span className="text-[10px] font-black uppercase tracking-tighter text-white/30">When</span>
-            <span className="text-sm font-bold text-primary-yellow">{dateString} {timeString && `· ${timeString}`}</span>
+            <span className="text-sm font-bold text-primary-yellow">{dateString}{timeString && ` · ${timeString}`}</span>
           </div>
-          
-          <div className="flex -space-x-3 ml-auto">
-            {going.slice(0, 3).map((r, i) => (
-              <div 
-                key={i} 
-                className="w-8 h-8 rounded-full border-2 border-card bg-background flex items-center justify-center text-sm"
-                title={r.user?.name}
-              >
-                {r.user?.emoji || '👤'}
+
+          {/* Stacked going avatars */}
+          <div className="flex -space-x-2 ml-auto">
+            {going.slice(0, 4).map((r, i) => (
+              <div key={i} className="w-7 h-7 rounded-full border-2 border-card overflow-hidden bg-card">
+                <Avatar user={r.user} size={28} />
               </div>
             ))}
-            {going.length > 3 && (
-              <div className="w-8 h-8 rounded-full border-2 border-card bg-white/10 flex items-center justify-center text-[10px] font-black">
-                +{going.length - 3}
+            {going.length > 4 && (
+              <div className="w-7 h-7 rounded-full border-2 border-card bg-white/10 flex items-center justify-center text-[9px] font-black">
+                +{going.length - 4}
               </div>
             )}
           </div>
         </div>
       </Link>
 
-      <div className="pt-4 mt-2 border-t border-white/5 space-y-3">
-        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest opacity-30 px-1">
-          <span>Crew Status</span>
-          <span>{going.length} going · {interested.length} interested</span>
-        </div>
-        
-        <RsvpButtons 
-          currentRsvp={myRsvp} 
-          onRsvp={(res) => onRsvp(id, res)} 
-        />
+      {/* RSVP summary counts */}
+      <div className="flex gap-3 px-1 mb-3 mt-2">
+        <span className="text-[10px] font-black text-primary-green">✅ {going.length}</span>
+        <span className="text-[10px] font-black text-primary-yellow">👀 {interested.length}</span>
+        <span className="text-[10px] font-black text-white/20">❌ {notGoing.length}</span>
+      </div>
+
+      <div className="pt-3 border-t border-white/5">
+        <RsvpButtons currentRsvp={myRsvp} onRsvp={(res) => onRsvp(id, res)} />
       </div>
     </div>
   )
