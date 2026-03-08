@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Gabarito:wght@400..900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0e0c14;
+  --card: #16131f;
+  --primary-red: #ff6b6b;
+  --primary-yellow: #ffd93d;
+  --primary-green: #6bcb77;
+  --primary-blue: #4d96ff;
+  --primary-purple: #c77dff;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-white font-sans antialiased selection:bg-primary-red/30;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Gabarito', sans-serif;
+    @apply font-black tracking-tight uppercase;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-card/60 backdrop-blur-xl border border-white/5;
+  }
+  
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .btn-primary {
+    @apply bg-primary-red text-background font-black py-4 px-6 rounded-2xl active:scale-95 transition-all duration-200 disabled:opacity-50;
+  }
+
+  .input-frens {
+    @apply w-full bg-card border border-white/10 rounded-2xl p-4 text-lg outline-none focus:border-primary-red transition-all duration-200;
+  }
+
+  .card-frens {
+    @apply bg-card rounded-[2rem] p-6 border border-white/5 shadow-2xl;
+  }
+}
+
+/* Custom Animations */
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* Skeleton Shimmer */
+.skeleton {
+  @apply bg-white/5 overflow-hidden relative;
+}
+.skeleton::after {
+  content: "";
+  @apply absolute inset-0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Gradient Text */
+.text-gradient-red-yellow {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-red to-primary-yellow;
+}
+
+/* Hide Scrollbars */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
