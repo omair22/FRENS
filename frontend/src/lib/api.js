@@ -9,7 +9,6 @@ const api = axios.create({
 api.interceptors.request.use(async (config) => {
   try {
     const { data: { session } } = await supabase.auth.getSession()
-    console.log('[API] session:', session ? 'found' : 'missing')
     if (session?.access_token) {
       config.headers.Authorization = `Bearer ${session.access_token}`
     }

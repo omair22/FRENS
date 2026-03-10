@@ -14,20 +14,18 @@ const bucketKey = (lat, lng, category) => {
 export const getCached = (lat, lng, category) => {
     const key = bucketKey(lat, lng, category)
     const entry = cache.get(key)
-    if (!entry) return null
-    if (Date.now() - entry.timestamp > TTL_MS) {
-        cache.delete(key)
-        return null
+    if (entry) {
+        if (Date.now() - entry.timestamp > TTL_MS) {
+            cache.delete(key)
+            return null
+        }
+        return entry.data
     }
-    console.log(`[VENUE CACHE] hit — ${key}`)
-    return entry.data
 }
 
 export const setCached = (lat, lng, category, data) => {
     const key = bucketKey(lat, lng, category)
-    cache.set(key, { data, timestamp: Date.now() })
-    console.log(`[VENUE CACHE] stored — ${key} (${data.length} venues)`)
-
+    cache.set(key, { timestamp: Date.now(), data })
     // Prevent memory leak — cap cache at 100 entries
     if (cache.size > 100) {
         const oldest = [...cache.entries()]
@@ -56,7 +54,7 @@ export const getDetailCached = (placeId) => {
 }
 
 export const setDetailCached = (placeId, data) => {
-    detailCache.set(placeId, { data, timestamp: Date.now() })
+    detailCache.set(placeId, { timestamp: Date.now(), data })
     if (detailCache.size > 200) {
         const oldest = [...detailCache.entries()]
             .sort((a, b) => a[1].timestamp - b[1].timestamp)[0]
