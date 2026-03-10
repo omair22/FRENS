@@ -49,7 +49,8 @@ router.get('/', authMiddleware, async (req, res) => {
 /** POST / — create hangout */
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { title, emoji, location, datetime, end_datetime, notes, is_public = false, invitedFrenIds = [] } = req.body
+    const { title, emoji, location, datetime, end_datetime, notes, is_public = false, invited_frens = [] } = req.body
+    const invitedFrenIds = invited_frens // Map the prop from frontend
     const { data, error } = await supabase
       .from('hangouts')
       .insert({ title, emoji, location, datetime, end_datetime, notes, is_public, created_by: req.user.id, status: 'planning' })
@@ -65,13 +66,25 @@ router.post('/', authMiddleware, async (req, res) => {
       const rsvpRows = invitedFrenIds.map(uid => ({ hangout_id: data.id, user_id: uid, response: 'invited' }))
       await supabase.from('rsvps').upsert(rsvpRows, { onConflict: 'hangout_id,user_id' })
 
-      const { data: creator } = await supabase.from('users').select('name').eq('id', req.user.id).single()
-      await notify(invitedFrenIds, {
-        type: 'hangout_invite',
-        title: '📅 New hangout!',
-        body: `${creator?.name || 'A fren'} invited you to ${title}`,
-        data: { hangoutId: data.id },
-      })
+      const isPinned = location && !datetime
+
+      if (isPinned) {
+        const { data: pinner } = await supabase.from('users').select('name').eq('id', req.user.id).single()
+        await notify(invitedFrenIds, {
+          type: 'hangout_invite',
+          title: `${pinner?.name || 'A fren'} pinned you`,
+          body: `Meet at ${location}?`,
+          data: { hangoutId: data.id, isPinned: true },
+        })
+      } else {
+        const { data: creator } = await supabase.from('users').select('name').eq('id', req.user.id).single()
+        await notify(invitedFrenIds, {
+          type: 'hangout_invite',
+          title: '📅 New hangout!',
+          body: `${creator?.name || 'A fren'} invited you to ${title}`,
+          data: { hangoutId: data.id },
+        })
+      }
     }
 
     res.status(201).json(data)

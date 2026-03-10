@@ -124,8 +124,8 @@ export const acceptFrenRequest = (requestId) =>
 export const declineFrenRequest = (requestId) =>
   api.post('/frens/decline', { requestId })
 
-export const pingFren = (id) =>
-  api.post(`/frens/${id}/ping`)
+export const pingFren = (id, options = {}) =>
+  api.post(`/frens/${id}/ping`, options)
 
 // Availability
 export const getAvailability = () =>
@@ -221,5 +221,12 @@ export const completeOnboarding = updateProfile
 export const getMyProfile = getMe
 export const getMyStats = getUserStats
 export const updateAvailability = setAvailability
+
+// Venues
+export const getNearbyVenues = (lat, lng, category = 'all') =>
+  api.get(`/venues/nearby?lat=${lat}&lng=${lng}&category=${category}`)
+
+export const getVenueDetails = (placeId) =>
+  api.get(`/venues/${placeId}`)
 
 export default api

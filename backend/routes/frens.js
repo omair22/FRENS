@@ -290,14 +290,44 @@ router.post('/decline', authMiddleware, async (req, res) => {
  * POST /api/frens/:id/ping
  */
 router.post('/:id/ping', authMiddleware, async (req, res) => {
-  const { data: pinger } = await supabase.from('users').select('name').eq('id', req.user.id).single()
-  await notify(req.params.id, {
-    type: 'nearby_ping',
-    title: '📍 Someone pinged you!',
-    body: `${pinger?.name || 'A fren'} is nearby and wants to hang`,
-    data: { fromUserId: req.user.id },
-  })
-  res.json({ message: 'Ping sent! ⚡' })
+  try {
+    const { timeOffsetMinutes, timeLabel } = req.body
+
+    const { data: pinger } = await supabase
+      .from('users').select('name').eq('id', req.user.id).single()
+
+    // Build notification body based on time
+    let body
+    if (timeLabel) {
+      body = `${pinger.name} wants to hang — meet ${timeLabel}`
+    } else {
+      body = `${pinger.name} is nearby and wants to hang`
+    }
+
+    // Compute actual datetime if offset provided
+    let meetAt = null
+    if (timeOffsetMinutes !== undefined && timeOffsetMinutes !== null) {
+      const d = new Date()
+      d.setMinutes(d.getMinutes() + timeOffsetMinutes)
+      meetAt = d.toISOString()
+    }
+
+    await notify(req.params.id, {
+      type: 'nearby_ping',
+      title: 'Ping!',
+      body,
+      data: {
+        fromUserId: req.user.id,
+        fromName: pinger.name,
+        meetAt,
+        timeLabel: timeLabel || null
+      }
+    })
+
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
 })
 
 /**

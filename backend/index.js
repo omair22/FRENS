@@ -9,6 +9,7 @@ import aiRoutes from './routes/ai.js'
 import usersRoutes from './routes/users.js'
 import nearbyRoutes from './routes/nearby.js'
 import notificationsRoutes from './routes/notifications.js'
+import venuesRoutes from './routes/venues.js'
 import { archivePassedHangouts } from './lib/archiveHangouts.js'
 
 dotenv.config()
@@ -32,6 +33,7 @@ app.use('/api/ai', aiRoutes)
 app.use('/api/users', usersRoutes)
 app.use('/api/nearby', nearbyRoutes)
 app.use('/api/notifications', notificationsRoutes)
+app.use('/api/venues', venuesRoutes)
 
 // Health check
 app.get('/health', (req, res) => {
