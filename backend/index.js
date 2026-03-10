@@ -8,6 +8,8 @@ import availabilityRoutes from './routes/availability.js'
 import aiRoutes from './routes/ai.js'
 import usersRoutes from './routes/users.js'
 import nearbyRoutes from './routes/nearby.js'
+import notificationsRoutes from './routes/notifications.js'
+import { archivePassedHangouts } from './lib/archiveHangouts.js'
 
 dotenv.config()
 
@@ -29,6 +31,7 @@ app.use('/api/availability', availabilityRoutes)
 app.use('/api/ai', aiRoutes)
 app.use('/api/users', usersRoutes)
 app.use('/api/nearby', nearbyRoutes)
+app.use('/api/notifications', notificationsRoutes)
 
 // Health check
 app.get('/health', (req, res) => {
@@ -37,4 +40,13 @@ app.get('/health', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Frens backend running on port ${PORT}`)
+
+  // Run on startup to catch anything missed while server was down
+  archivePassedHangouts().then(archived => {
+    if (archived && archived.length > 0) {
+      console.log(`[STARTUP] Archived ${archived.length} past hangout(s)`)
+    }
+  }).catch(err => {
+    console.error('[STARTUP ARCHIVE ERROR]', err)
+  })
 })

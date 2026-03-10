@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -118,6 +119,7 @@ const FlyToLocation = ({ coords }) => {
 }
 
 const Nearby = () => {
+  const navigate = useNavigate()
   const { user, setToast } = useStore()
   const [frens, setFrens] = useState([])
   const [loading, setLoading] = useState(true)
@@ -260,7 +262,7 @@ const Nearby = () => {
             )}
           </div>
           <div className="bg-background/80 backdrop-blur rounded-2xl p-1 flex border border-white/5 pointer-events-auto">
-            {[['out','🟢'],['ghost','👻'],['inv','🫥']].map(([m, icon]) => (
+            {[['out', '🟢'], ['ghost', '👻'], ['inv', '🫥']].map(([m, icon]) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
@@ -274,7 +276,20 @@ const Nearby = () => {
       </div>
 
       {/* Nearby List */}
-      <div className="flex-1 p-6 space-y-6 bg-background rounded-t-[3rem] -translate-y-8 relative z-10 shadow-2xl">
+      <div className="flex-1 p-6 space-y-4 bg-background rounded-t-[3rem] -translate-y-8 relative z-10 shadow-2xl">
+
+        {/* Ghost mode banner */}
+        {mode === 'ghost' && (
+          <div className="px-4 py-2.5 rounded-2xl flex items-center gap-3"
+            style={{ background: 'rgba(199,125,255,0.08)', border: '1px solid rgba(199,125,255,0.15)' }}>
+            <span className="text-lg">👻</span>
+            <div>
+              <p className="text-xs font-bold" style={{ color: '#c77dff' }}>Ghost Mode on</p>
+              <p className="text-[10px] text-white/30 mt-0.5">You're hidden · you can still see frens</p>
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-between items-center">
           <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">Frens in Range</h3>
           <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase ${coords ? 'text-primary-blue bg-primary-blue/10' : 'text-white/20 bg-white/5'}`}>
@@ -301,7 +316,10 @@ const Nearby = () => {
         ) : (
           <div className="space-y-3">
             {frens.map(f => (
-              <div key={f.id} className="card-frens p-4 flex items-center justify-between group">
+              <div key={f.id}
+                className="card-frens p-4 flex items-center justify-between group cursor-pointer active:scale-95 transition-transform"
+                onClick={() => navigate(`/profile/${f.id}`)}
+              >
                 <div className="flex items-center gap-4">
                   <Avatar name={f.name} config={f.avatar_config || {}} size={48} status={f.status} />
                   <div>
@@ -312,7 +330,10 @@ const Nearby = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => handlePing(f.id, f.name)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handlePing(f.id, f.name)
+                  }}
                   className="w-12 h-12 rounded-2xl bg-primary-blue/10 text-primary-blue flex items-center justify-center text-xl active:scale-90 transition-transform"
                 >
                   ⚡

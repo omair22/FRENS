@@ -2,9 +2,9 @@ import React from 'react'
 
 const RsvpButtons = ({ currentRsvp, onRsvp }) => {
   const options = [
-    { label: "I'm In", value: 'going', emoji: '✅', color: 'bg-primary-green' },
+    { label: "I'm In", value: 'in', emoji: '✅', color: 'bg-primary-green' },
     { label: "Interested", value: 'interested', emoji: '🧐', color: 'bg-primary-yellow' },
-    { label: "Skip", value: 'skipped', emoji: '🤷', color: 'bg-white/10' }
+    { label: "Skip", value: 'skip', emoji: '🤷', color: 'bg-white/10' }
   ]
 
   return (

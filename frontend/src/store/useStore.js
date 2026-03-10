@@ -10,12 +10,18 @@ export const useStore = create(
       availability: {},
       toast: null,
       pendingRequestCount: 0,
+      unreadCount: 0,
       
       setUser: (user) => set({ user }),
       setFrens: (frens) => set({ frens }),
       setHangouts: (hangouts) => set({ hangouts }),
       setAvailability: (availability) => set({ availability }),
       setPendingRequestCount: (pendingRequestCount) => set({ pendingRequestCount }),
+      setUnreadCount: (unreadCount) => set({ unreadCount }),
+      incrementUnread: () => set(state => ({ unreadCount: state.unreadCount + 1 })),
+      
+      activeFab: null,
+      setActiveFab: (activeFab) => set({ activeFab }),
       setToast: (toast) => {
         set({ toast })
         if (toast) {

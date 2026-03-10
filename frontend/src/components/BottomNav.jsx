@@ -4,7 +4,7 @@ import { getFrenRequests } from '../lib/api'
 import { useStore } from '../store/useStore'
 
 const BottomNav = () => {
-  const { pendingRequestCount, setPendingRequestCount } = useStore()
+  const { pendingRequestCount, setPendingRequestCount, activeFab } = useStore()
 
   const fetchRequestCount = async () => {
     try {
@@ -34,18 +34,38 @@ const BottomNav = () => {
       <div className="max-w-md mx-auto glass rounded-[2.5rem] p-2 flex justify-between items-center shadow-2xl relative">
         {items.map((item) => (
           item.isFab ? (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => `
-                flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center text-3xl
-                bg-gradient-to-br from-primary-red to-primary-yellow shadow-lg shadow-primary-red/30
-                -translate-y-8 active:scale-90 transition-all duration-300
-                ${isActive ? 'scale-110' : ''}
-              `}
-            >
-              <span className="text-background font-black mb-1">+</span>
-            </NavLink>
+            activeFab ? (
+              activeFab.path ? (
+                <NavLink
+                  key="active-fab"
+                  to={activeFab.path}
+                  className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center text-3xl bg-gradient-to-br shadow-lg -translate-y-8 active:scale-90 transition-all duration-300 from-primary-blue to-blue-400 shadow-primary-blue/30"
+                >
+                  <span className="text-background -ml-0.5">{activeFab.icon}</span>
+                </NavLink>
+              ) : (
+                <button
+                  key="active-fab"
+                  onClick={activeFab.onClick}
+                  className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center text-3xl bg-gradient-to-br shadow-lg -translate-y-8 active:scale-90 transition-all duration-300 from-primary-green to-[#4caf50] shadow-primary-green/30"
+                >
+                  <span className="text-background">{activeFab.icon}</span>
+                </button>
+              )
+            ) : (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) => `
+                  flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center text-3xl
+                  bg-gradient-to-br from-primary-red to-primary-yellow shadow-lg shadow-primary-red/30
+                  -translate-y-8 active:scale-90 transition-all duration-300
+                  ${isActive ? 'scale-110' : ''}
+                `}
+              >
+                <span className="text-background font-black mb-1">+</span>
+              </NavLink>
+            )
           ) : (
             <NavLink
               key={item.path}

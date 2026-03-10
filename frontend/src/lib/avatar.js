@@ -1,54 +1,70 @@
 /**
- * Avataaars DiceBear avatar URL builder (v7.x)
- * https://www.dicebear.com/styles/avataaars
+ * DiceBear v7 Adventurer avatar URL builder
+ * https://www.dicebear.com/styles/adventurer
+ *
+ * The adventurer style generates unique avatars from the seed value.
+ * Customisation options: backgroundColor, skinColor, hair, hairColor,
+ * eyes, eyebrows, mouth, earrings, glasses, features
  */
 
 export const DEFAULT_AVATAR_CONFIG = {
-  skinColor:     'f8d25c',
-  hairStyle:     'shortHairShortFlat',
-  hairColor:     'a55728',
-  facialHair:    'none',        // 'none' means facialHairProbability=0
-  accessories:   'none',        // 'none' means accessoriesProbability=0
-  clothingColor: 'ff6b6b',
-  eyeType:       'default',
-  mouthType:     'smile',
+  skinColor:     'f2d3b1',
+  hair:          'short01',
+  hairColor:     'ac6651',
+  eyes:          'variant01',
+  eyebrows:      'variant01',
+  mouth:         'variant01',
+  earrings:      'none',
+  glasses:       'none',
+  features:      'none',
 }
 
 export const buildAvatarUrl = (name, config = {}) => {
   const cfg = { ...DEFAULT_AVATAR_CONFIG, ...(config || {}) }
-  const base = 'https://api.dicebear.com/7.x/avataaars/svg'
+  const base = 'https://api.dicebear.com/7.x/adventurer/svg'
   const p = new URLSearchParams()
 
-  // Seed & background
   p.set('seed',            name || 'user')
-  p.set('backgroundColor', '1d1928')
-  p.set('backgroundType',  'solid')
+  p.set('backgroundColor', 'transparent')
 
-  // Appearance — plain key=value, no brackets
-  p.set('skinColor',     cfg.skinColor)
-  p.set('hairColor',     cfg.hairColor)
-  p.set('clothingColor', cfg.clothingColor)
-  p.set('top',           cfg.hairStyle)
-  p.set('eyes',          cfg.eyeType)
-  p.set('mouth',         cfg.mouthType)
+  // Skin
+  p.set('skinColor', cfg.skinColor)
 
-  // Facial hair — 'none' disables it via probability
-  if (cfg.facialHair && cfg.facialHair !== 'none' && cfg.facialHair !== 'blank') {
-    p.set('facialHair', cfg.facialHair)
-  } else {
-    p.set('facialHairProbability', '0')
+  // Hair
+  if (cfg.hair && cfg.hair !== 'none') {
+    p.set('hair', cfg.hair)
+    p.set('hairColor', cfg.hairColor)
   }
 
-  // Accessories — same pattern
-  if (cfg.accessories && cfg.accessories !== 'none' && cfg.accessories !== 'blank') {
-    p.set('accessories', cfg.accessories)
+  // Face features
+  p.set('eyes',     cfg.eyes)
+  p.set('eyebrows', cfg.eyebrows)
+  p.set('mouth',    cfg.mouth)
+
+  // Accessories
+  if (cfg.earrings && cfg.earrings !== 'none') {
+    p.set('earrings',            cfg.earrings)
+    p.set('earringsProbability', '100')
   } else {
-    p.set('accessoriesProbability', '0')
+    p.set('earringsProbability', '0')
+  }
+
+  if (cfg.glasses && cfg.glasses !== 'none') {
+    p.set('glasses',            cfg.glasses)
+    p.set('glassesProbability', '100')
+  } else {
+    p.set('glassesProbability', '0')
+  }
+
+  if (cfg.features && cfg.features !== 'none') {
+    p.set('features',            cfg.features)
+    p.set('featuresProbability', '100')
+  } else {
+    p.set('featuresProbability', '0')
   }
 
   return `${base}?${p.toString()}`
 }
 
-// Legacy shim kept for any remaining getAvatarUrl calls
 export const getAvatarUrl = (user, _size) =>
   buildAvatarUrl(user?.name, user?.avatar_config || {})

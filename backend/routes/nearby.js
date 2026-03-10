@@ -4,7 +4,7 @@ import { authMiddleware } from '../middleware/auth.js'
 
 const router = express.Router()
 
-/** Haversine formula — returns distance in miles */
+/** Haversine — returns miles */
 const haversine = (lat1, lng1, lat2, lng2) => {
   const R = 3958.8
   const dLat = (lat2 - lat1) * Math.PI / 180
@@ -18,42 +18,47 @@ const haversine = (lat1, lng1, lat2, lng2) => {
 }
 
 /**
- * GET /api/nearby?lat=X&lng=Y&mode=out|ghost|invisible
+ * GET /api/nearby?lat=X&lng=Y&mode=out|ghost|inv
  *
- * Modes:
- *  out       — share your location, appear to others, see others ✅
- *  ghost     — still see others, but YOU are hidden from theirs 👻
- *  invisible — completely offline: location cleared, see no one   🫥
+ * out       — share location, appear to others, see others
+ * ghost     — see others, hidden from all EXCEPT mutual frens
+ * inv       — completely offline: location cleared, see nobody
  */
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const lat  = parseFloat(req.query.lat)
     const lng  = parseFloat(req.query.lng)
-    const mode = req.query.mode || 'out'  // 'out' | 'ghost' | 'invisible'
+    const mode = req.query.mode || 'out'
 
     if (isNaN(lat) || isNaN(lng)) {
       return res.status(400).json({ error: 'lat and lng are required' })
     }
 
-    // 1. Update the user's location + mode in the DB
-    if (mode === 'invisible') {
-      // Clear coordinates so they vanish from everyone else's radar
+    // --- Invisible: clear location, return empty ---
+    if (mode === 'inv' || mode === 'invisible') {
       await supabase
         .from('users')
         .update({ lat: null, lng: null, location_mode: 'invisible' })
         .eq('id', req.user.id)
-
-      // Invisible users see nobody
       return res.json([])
     }
 
-    // For 'out' and 'ghost': save location, save mode
+    // --- Ghost: save location (so others know you're ghost) but see nobody ---
+    if (mode === 'ghost') {
+      await supabase
+        .from('users')
+        .update({ lat, lng, location_updated_at: new Date().toISOString(), location_mode: 'ghost' })
+        .eq('id', req.user.id)
+      return res.json([])
+    }
+
+    // --- Out: save location, see others ---
     await supabase
       .from('users')
-      .update({ lat, lng, location_updated_at: new Date().toISOString(), location_mode: mode })
+      .update({ lat, lng, location_updated_at: new Date().toISOString(), location_mode: 'out' })
       .eq('id', req.user.id)
 
-    // 2. Get accepted fren IDs
+    // 1. Get accepted fren IDs
     const { data: friendships } = await supabase
       .from('friendships')
       .select('fren_id')
@@ -63,19 +68,40 @@ router.get('/', authMiddleware, async (req, res) => {
     const frenIds = (friendships || []).map(f => f.fren_id)
     if (frenIds.length === 0) return res.json([])
 
-    // 3. Fetch frens — only those in 'out' mode (ghost + invisible are hidden from your list)
+    // 2. Fetch frens with location (exclude invisible)
     const { data: frens, error } = await supabase
       .from('users')
-      .select('id, name, avatar_style, status, lat, lng, location_updated_at, location_mode')
+      .select('id, name, avatar_style, avatar_config, status, lat, lng, location_updated_at, location_mode')
       .in('id', frenIds)
-      .eq('location_mode', 'out')   // hidden users don't appear
       .not('lat', 'is', null)
       .not('lng', 'is', null)
+      .neq('location_mode', 'invisible')
 
     if (error) throw error
 
-    // 4. Compute real distances
-    const result = (frens || [])
+    // 3. For ghost frens: only show them if they're a MUTUAL fren
+    //    (friendship exists in both directions)
+    const ghostFrenIds = (frens || []).filter(f => f.location_mode === 'ghost').map(f => f.id)
+    let mutualFrenIds = new Set()
+
+    if (ghostFrenIds.length > 0) {
+      const { data: reverseFriendships } = await supabase
+        .from('friendships')
+        .select('user_id')
+        .in('user_id', ghostFrenIds)
+        .eq('fren_id', req.user.id)
+        .eq('status', 'accepted')
+
+      mutualFrenIds = new Set((reverseFriendships || []).map(f => f.user_id))
+    }
+
+    const visibleFrens = (frens || []).filter(f => {
+      if (f.location_mode === 'ghost') return mutualFrenIds.has(f.id)
+      return true // out mode → always visible
+    })
+
+    // 4. Compute distances
+    const result = visibleFrens
       .map(f => {
         const dist = haversine(lat, lng, f.lat, f.lng)
         const minutesAgo = f.location_updated_at
@@ -86,6 +112,7 @@ router.get('/', authMiddleware, async (req, res) => {
           id: f.id,
           name: f.name,
           avatar_style: f.avatar_style,
+          avatar_config: f.avatar_config,
           status: f.status,
           lat: f.lat,
           lng: f.lng,
@@ -98,6 +125,7 @@ router.get('/', authMiddleware, async (req, res) => {
             : minutesAgo < 60 ? `${minutesAgo}m ago`
             : `${Math.floor(minutesAgo / 60)}h ago`
             : 'Unknown',
+          isGhost: f.location_mode === 'ghost',
         }
       })
       .sort((a, b) => a.distanceMiles - b.distanceMiles)

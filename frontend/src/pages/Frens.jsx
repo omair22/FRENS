@@ -7,6 +7,8 @@ import { useStore } from '../store/useStore'
 import Skeleton from '../components/Skeleton'
 import Avatar from '../components/Avatar'
 
+import { useNavigate } from 'react-router-dom'
+
 // Format time ago from ISO string
 const timeAgo = (iso) => {
   const mins = Math.floor((Date.now() - new Date(iso)) / 60000)
@@ -18,6 +20,7 @@ const timeAgo = (iso) => {
 }
 
 const Frens = () => {
+  const navigate = useNavigate()
   const { frens, setFrens, setToast, setPendingRequestCount } = useStore()
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -100,14 +103,14 @@ const Frens = () => {
   const handleAcceptFromSearch = async (requestId, fromUser) => {
     try {
       await acceptFrenRequest(requestId)
-      setToast({ message: `🎉 You're now frens with ${fromUser?.name}!`, type: 'success' })
+      setToast({ message: `You're now frens with ${fromUser?.name}!`, type: 'success' })
       setSearchResults(prev => prev.map(u =>
         u.requestId === requestId ? { ...u, relationshipStatus: 'accepted' } : u
       ))
       fetchFrens()
       fetchRequests()
     } catch (err) {
-      setToast({ message: 'Accept failed ❌', type: 'error' })
+      setToast({ message: 'Accept failed', type: 'error' })
     }
   }
 
@@ -116,10 +119,10 @@ const Frens = () => {
       await acceptFrenRequest(requestId)
       setIncomingRequests(prev => prev.filter(r => r.requestId !== requestId))
       setPendingRequestCount(c => Math.max(0, c - 1))
-      setToast({ message: `🎉 You're now frens with ${fromName}!`, type: 'success' })
+      setToast({ message: `You're now frens with ${fromName}!`, type: 'success' })
       fetchFrens()
     } catch (err) {
-      setToast({ message: 'Accept failed ❌', type: 'error' })
+      setToast({ message: 'Accept failed', type: 'error' })
     }
   }
 
@@ -130,15 +133,15 @@ const Frens = () => {
       setPendingRequestCount(c => Math.max(0, c - 1))
       setToast({ message: 'Request declined', type: 'info' })
     } catch (err) {
-      setToast({ message: 'Decline failed ❌', type: 'error' })
+      setToast({ message: 'Decline failed', type: 'error' })
     }
   }
 
-  const handleCancelRequest = async (requestId) => {
+  const handleCancelRequest = async (request) => {
     try {
-      await removeFren(requestId) // uses the DELETE /:id route (requestId = friendship row id)
-      // Actually backend delete takes fren_id not row id — cancel via a workaround below
-      setOutgoingRequests(prev => prev.filter(r => r.requestId !== requestId))
+      // Backend DELETE /frens/:id uses the fren's user_id, not the friendship row id
+      await removeFren(request.to?.id || request.requestId)
+      setOutgoingRequests(prev => prev.filter(r => r.requestId !== request.requestId))
       setToast({ message: 'Request cancelled', type: 'info' })
     } catch (err) {
       setToast({ message: 'Could not cancel', type: 'error' })
@@ -146,13 +149,13 @@ const Frens = () => {
   }
 
   const handleRemoveFren = async (id) => {
-    if (!confirm('Remove this fren? 😢')) return
+    if (!confirm('Remove this fren?')) return
     try {
       setFrens(frens.filter(f => f.id !== id))
       await removeFren(id)
       setToast({ message: 'Removed', type: 'info' })
     } catch (err) {
-      setToast({ message: 'Failed to remove ❌', type: 'error' })
+      setToast({ message: 'Failed to remove', type: 'error' })
       fetchFrens()
     }
   }
@@ -169,7 +172,7 @@ const Frens = () => {
       case 'pending_sent':
         return (
           <button disabled className="bg-white/5 text-white/30 text-[10px] font-black uppercase px-4 py-2 rounded-full cursor-default">
-            ⏳ Pending
+            Pending
           </button>
         )
       case 'pending_received':
@@ -187,7 +190,7 @@ const Frens = () => {
             onClick={() => handleAddFren(user)}
             className="bg-[#6bcb77] text-black text-[10px] font-black uppercase px-4 py-2 rounded-full active:scale-90 transition-transform"
           >
-            ＋ Add
+            Add
           </button>
         )
     }
@@ -208,7 +211,7 @@ const Frens = () => {
           <span className="absolute left-4 opacity-30 group-focus-within:opacity-100 transition-opacity">🔍</span>
           <input
             type="text"
-            placeholder="Search by name or email 🔍"
+            placeholder="Search by name or email"
             className="w-full h-full bg-[#16131f] border border-white/10 rounded-2xl px-12 text-[14px] font-sans outline-none focus:border-primary-red/50 transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -237,7 +240,7 @@ const Frens = () => {
               <div className="space-y-1">
                 {searchResults.map((user) => (
                   <div key={user.id} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-2xl transition-colors h-[56px]">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(`/profile/${user.id}`)}>
                       <Avatar name={user.name} config={user.avatar_config || {}} size={36} />
                       <div>
                         <h4 className="text-sm font-bold leading-none">{user.name}</h4>
@@ -276,8 +279,8 @@ const Frens = () => {
                 key={req.requestId}
                 className="card-frens p-4 flex items-center justify-between animate-in slide-in-from-right duration-300 border border-primary-yellow/20 bg-primary-yellow/5"
               >
-                <div className="flex items-center gap-3">
-                <Avatar name={req.from?.name} config={req.from?.avatar_config || {}} size={40} />
+                <div className="flex items-center gap-3 cursor-pointer hover:opacity-80" onClick={() => navigate(`/profile/${req.from?.id}`)}>
+                  <Avatar name={req.from?.name} config={req.from?.avatar_config || {}} size={40} />
                   <div>
                     <h4 className="font-display font-bold leading-none text-sm">{req.from?.name}</h4>
                     <p className="text-[10px] opacity-40 mt-0.5 font-black uppercase">{timeAgo(req.created_at)}</p>
@@ -306,15 +309,15 @@ const Frens = () => {
                 key={req.requestId}
                 className="card-frens p-4 flex items-center justify-between opacity-60"
               >
-                <div className="flex items-center gap-3">
-                <Avatar name={req.to?.name} config={req.to?.avatar_config || {}} size={40} />
+                <div className="flex items-center gap-3 cursor-pointer hover:opacity-80" onClick={() => navigate(`/profile/${req.to?.id}`)}>
+                  <Avatar name={req.to?.name} config={req.to?.avatar_config || {}} size={40} />
                   <div>
                     <h4 className="font-display font-bold leading-none text-sm">{req.to?.name}</h4>
                     <p className="text-[10px] text-primary-yellow font-black uppercase mt-0.5">⏳ Waiting...</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => handleCancelRequest(req.requestId)}
+                  onClick={() => handleCancelRequest(req)}
                   className="text-[9px] font-black uppercase bg-white/5 px-3 py-2 rounded-xl opacity-50 hover:opacity-100 transition-opacity"
                 >
                   Cancel
@@ -339,17 +342,28 @@ const Frens = () => {
           <div className="grid grid-cols-1 gap-3">
             {frens.map((fren) => (
               <div key={fren.id} className="card-frens p-4 flex items-center justify-between group active:scale-[0.98] transition-all duration-200">
-                <div className="flex items-center gap-4">
+                <div
+                  className="flex items-center gap-4 cursor-pointer flex-1"
+                  onClick={() => navigate(`/profile/${fren.id}`)}
+                >
                   <Avatar name={fren.name} config={fren.avatar_config || {}} size={44} status={fren.status} />
                   <div>
-                    <h4 className="font-display font-bold leading-none">{fren.name}</h4>
+                    <h4 className="font-display font-bold leading-none text-sm">{fren.name}</h4>
+                    {fren.closeness > 0 && (
+                      <p className="text-[9px] font-black uppercase opacity-40 mt-0.5">
+                        {fren.closeness >= 5 ? 'always around' : fren.closeness >= 2 ? 'hangs out often' : 'hangs out sometimes'}
+                      </p>
+                    )}
                     <p className="text-[8px] font-black uppercase text-primary-green tracking-widest mt-1">
                       {fren.status === 'free' ? '● Active Now' : '● Offline'}
                     </p>
                   </div>
                 </div>
                 <button
-                  onClick={() => handleRemoveFren(fren.id)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleRemoveFren(fren.id)
+                  }}
                   className="w-10 h-10 rounded-full glass items-center justify-center flex opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <span className="text-[10px]">🚫</span>

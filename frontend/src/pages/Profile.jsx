@@ -31,7 +31,7 @@ const Profile = () => {
     try {
       await updateStatus(newStatus)
       setUser({ ...user, status: newStatus })
-      setToast({ message: `Status set to ${newStatus}! ✨`, type: 'info' })
+      setToast({ message: `Status set to ${newStatus}!`, type: 'info' })
     } catch (err) {
       setToast({ message: 'Update failed', type: 'error' })
     }
@@ -42,7 +42,7 @@ const Profile = () => {
       await updateAvatarConfig(config)
       setUser({ ...user, avatar_config: config })
       setShowEditor(false)
-      setToast({ message: 'Avatar updated ✨', type: 'success' })
+      setToast({ message: 'Avatar updated', type: 'success' })
     } catch (err) {
       setToast({ message: 'Failed to save avatar', type: 'error' })
     }
@@ -57,7 +57,15 @@ const Profile = () => {
   if (loading) return <div className="p-6 text-center pt-20 opacity-30">Loading profile...</div>
 
   return (
-    <div className="p-6 pb-32 max-w-md mx-auto space-y-10 animate-in fade-in duration-500 safe-top">
+    <div className="p-6 pb-32 max-w-md mx-auto space-y-10 animate-in fade-in duration-500 safe-top relative">
+
+      {/* Settings gear — top right */}
+      <button
+        onClick={() => navigate('/settings')}
+        className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-lg hover:bg-white/10 transition-colors z-10"
+      >
+        ⚙️
+      </button>
 
       {/* Header */}
       <div className="flex flex-col items-center text-center space-y-4">
@@ -90,9 +98,9 @@ const Profile = () => {
         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30 text-center">Your Status</h3>
         <div className="flex gap-2">
           {[
-            { id: 'free',  label: 'Down for anything', emoji: '🕺', color: 'bg-primary-green'  },
-            { id: 'maybe', label: 'Convincable',        emoji: '🤔', color: 'bg-primary-yellow' },
-            { id: 'busy',  label: 'Doing things',       emoji: '💼', color: 'bg-primary-red'    },
+            { id: 'free', label: 'Down for anything', emoji: '🕺', color: 'bg-primary-green' },
+            { id: 'maybe', label: 'Convincable', emoji: '🤔', color: 'bg-primary-yellow' },
+            { id: 'busy', label: 'Doing things', emoji: '💼', color: 'bg-primary-red' },
           ].map(s => (
             <button
               key={s.id}

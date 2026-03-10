@@ -1,6 +1,7 @@
 import express from 'express'
 import { supabase } from '../lib/supabase.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { notify } from '../lib/notify.js'
 
 const router = express.Router()
 
@@ -38,7 +39,7 @@ router.get('/search', authMiddleware, async (req, res) => {
     const results = data.map(user => {
       const rel = (relationships || []).find(
         r => (r.user_id === req.user.id && r.fren_id === user.id) ||
-             (r.user_id === user.id && r.fren_id === req.user.id)
+          (r.user_id === user.id && r.fren_id === req.user.id)
       )
 
       let relationshipStatus = 'none'
@@ -103,28 +104,76 @@ router.get('/requests', authMiddleware, async (req, res) => {
 
 /**
  * GET /api/frens/
- * Only return ACCEPTED frens
+ * Returns ACCEPTED frens, sorted by closeness (shared hangouts)
  */
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { data: friendships, error } = await supabase
+    // Step 1: get fren IDs
+    const { data: friendships } = await supabase
       .from('friendships')
       .select('fren_id')
       .eq('user_id', req.user.id)
       .eq('status', 'accepted')
 
-    if (error) throw error
-    if (!friendships || friendships.length === 0) return res.json([])
+    const frenIds = (friendships || []).map(f => f.fren_id)
+    if (frenIds.length === 0) return res.json([])
 
-    const frenIds = friendships.map(f => f.fren_id)
+    // Step 2: get fren user objects
     const { data: frens } = await supabase
       .from('users')
-      .select('id, name, email, status, avatar_style, avatar_config')
+      .select('id, name, emoji, status, avatar_style, avatar_config, email')
       .in('id', frenIds)
 
-    res.json(frens || [])
+    // Step 3: get current user's 'in' hangouts
+    const { data: myRsvps } = await supabase
+      .from('rsvps')
+      .select('hangout_id')
+      .eq('user_id', req.user.id)
+      .eq('response', 'in')
+
+    const myHangoutIds = new Set((myRsvps || []).map(r => r.hangout_id))
+
+    // Step 4: for each fren, count shared hangouts
+    if (myHangoutIds.size > 0) {
+      const { data: frenRsvps } = await supabase
+        .from('rsvps')
+        .select('user_id, hangout_id')
+        .in('user_id', frenIds)
+        .eq('response', 'in')
+        .in('hangout_id', [...myHangoutIds])
+
+      // Build closeness map
+      const closeness = {}
+      frenIds.forEach(id => { closeness[id] = 0 })
+        ; (frenRsvps || []).forEach(r => {
+          if (closeness[r.user_id] !== undefined) {
+            closeness[r.user_id]++
+          }
+        })
+
+      // Attach closeness to each fren
+      const frensWithScore = (frens || []).map(f => ({
+        ...f,
+        closeness: closeness[f.id] || 0
+      }))
+
+      // Sort: highest closeness first, then alphabetically
+      frensWithScore.sort((a, b) => {
+        if (b.closeness !== a.closeness) return b.closeness - a.closeness
+        return a.name.localeCompare(b.name)
+      })
+
+      return res.json(frensWithScore)
+    }
+
+    // No hangouts yet — just return alphabetically with 0 closeness
+    const frensWithScore = (frens || [])
+      .map(f => ({ ...f, closeness: 0 }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    res.json(frensWithScore)
   } catch (err) {
-    console.error('[FRENS GET]', err)
+    console.error('[FRENS]', err)
     res.status(500).json({ error: err.message })
   }
 })
@@ -167,6 +216,16 @@ router.post('/add', authMiddleware, async (req, res) => {
     })
 
     if (insertError) throw insertError
+
+    // Notify target user
+    const { data: sender } = await supabase.from('users').select('name').eq('id', req.user.id).single()
+    await notify(frenId, {
+      type: 'fren_request',
+      title: '👋 New fren request',
+      body: `${sender?.name || 'Someone'} wants to be your fren`,
+      data: { fromUserId: req.user.id },
+    })
+
     res.json({ success: true, status: 'pending', message: `Fren request sent to ${targetUser.name}! ⏳` })
   } catch (err) {
     console.error('[ADD FREN]', err)
@@ -190,7 +249,16 @@ router.post('/accept', authMiddleware, async (req, res) => {
     await supabase.from('friendships').update({ status: 'accepted', responded_at: new Date().toISOString() }).eq('id', requestId)
     await supabase.from('friendships').insert({ user_id: req.user.id, fren_id: request.user_id, status: 'accepted', requested_by: request.user_id, responded_at: new Date().toISOString() })
 
-    const { data: newFren } = await supabase.from('users').select('id, name, email, status, avatar_style').eq('id', request.user_id).single()
+    // Notify the requester
+    const { data: acceptor } = await supabase.from('users').select('name').eq('id', req.user.id).single()
+    await notify(request.user_id, {
+      type: 'fren_accepted',
+      title: '🎉 Fren request accepted!',
+      body: `${acceptor?.name || 'Someone'} accepted your fren request`,
+      data: { frenId: req.user.id },
+    })
+
+    const { data: newFren } = await supabase.from('users').select('id, name, email, status, avatar_style, avatar_config').eq('id', request.user_id).single()
     res.json({ success: true, fren: newFren })
   } catch (err) {
     console.error('[ACCEPT]', err)
@@ -222,6 +290,13 @@ router.post('/decline', authMiddleware, async (req, res) => {
  * POST /api/frens/:id/ping
  */
 router.post('/:id/ping', authMiddleware, async (req, res) => {
+  const { data: pinger } = await supabase.from('users').select('name').eq('id', req.user.id).single()
+  await notify(req.params.id, {
+    type: 'nearby_ping',
+    title: '📍 Someone pinged you!',
+    body: `${pinger?.name || 'A fren'} is nearby and wants to hang`,
+    data: { fromUserId: req.user.id },
+  })
   res.json({ message: 'Ping sent! ⚡' })
 })
 

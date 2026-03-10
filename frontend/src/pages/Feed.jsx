@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getHangouts, getFrends, getSuggest, rsvpHangout, setAvailability } from '../lib/api'
 import { useStore } from '../store/useStore'
 import HangoutCard from '../components/HangoutCard'
@@ -7,12 +8,17 @@ import { FeedSkeleton } from '../components/Skeleton'
 import Toast from '../components/Toast'
 
 const Feed = () => {
-  const { user, hangouts, frens, toast, setHangouts, setFrens, setToast } = useStore()
+  const { user, hangouts, frens, toast, unreadCount, setHangouts, setFrens, setToast } = useStore()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [aiSuggestion, setAiSuggestion] = useState(null)
   const [showAvailSheet, setShowAvailSheet] = useState(false)
   const [selectedDay, setSelectedDay] = useState(null)
+  const [showPast, setShowPast] = useState(false)
+
+  const activeHangouts = hangouts.filter(h => h.status !== 'archived')
+  const archivedHangouts = hangouts.filter(h => h.status === 'archived')
 
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date()
@@ -30,7 +36,7 @@ const Feed = () => {
         getFrends(),
         getSuggest().catch(() => ({ data: null }))
       ])
-      
+
       setHangouts(hangoutsRes.data)
       setFrens(frensRes.data)
       if (aiRes.data) setAiSuggestion(aiRes.data)
@@ -83,9 +89,18 @@ const Feed = () => {
       {/* Header */}
       <div className="px-6 py-6 flex justify-between items-center">
         <h1 className="text-4xl font-display font-black italic text-gradient-red-yellow">FRENS</h1>
-        <div className="w-10 h-10 rounded-full glass flex items-center justify-center text-xl">
-          {user?.emoji || '👤'}
-        </div>
+        <button
+          onClick={() => navigate('/notifications')}
+          className="relative w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+        >
+          🔔
+          {unreadCount > 0 && (
+            <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-black text-white px-1"
+              style={{ background: '#ff6b6b', boxShadow: '0 0 8px rgba(255,107,107,0.5)' }}>
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </div>
+          )}
+        </button>
       </div>
 
       <div className="space-y-8 animate-in fade-in duration-700">
@@ -94,7 +109,7 @@ const Feed = () => {
           <h3 className="px-6 text-[10px] font-black uppercase tracking-[0.2em] opacity-30">Your Week</h3>
           <div className="flex gap-3 overflow-x-auto px-6 no-scrollbar pb-2">
             {days.map((date, i) => (
-              <button 
+              <button
                 key={i}
                 onClick={() => { setSelectedDay(date); setShowAvailSheet(true); }}
                 className="flex-shrink-0 w-12 h-20 bg-card rounded-2xl flex flex-col items-center justify-center gap-2 border border-white/5 active:scale-95 transition-all"
@@ -118,7 +133,7 @@ const Feed = () => {
                   <span className="text-[10px] font-black uppercase tracking-widest text-primary-purple">AI Scheduler Suggestion</span>
                 </div>
                 <h2 className="text-lg font-display font-black leading-tight normal-case italic line-clamp-2">
-                   "{aiSuggestion.reason}"
+                  "{aiSuggestion.reason}"
                 </h2>
                 <div className="mt-2 flex gap-2">
                   <button className="bg-primary-purple text-background px-4 py-1.5 rounded-full text-[10px] font-black uppercase active:scale-95 transition-transform">
@@ -137,9 +152,9 @@ const Feed = () => {
         <div className="space-y-4">
           <h3 className="px-6 text-[10px] font-black uppercase tracking-[0.2em] opacity-30">Who's Free Now</h3>
           <div className="flex gap-4 overflow-x-auto px-6 no-scrollbar pb-2">
-            <FrenBubble fren={{ ...user, name: 'You', status: user.status }} onClick={() => {}} />
+            <FrenBubble fren={{ ...user, name: 'You', status: user.status }} onClick={() => navigate('/profile')} />
             {frens.map(fren => (
-              <FrenBubble key={fren.id} fren={fren} onClick={() => {}} />
+              <FrenBubble key={fren.id} fren={fren} onClick={() => navigate(`/profile/${fren.id}`)} />
             ))}
           </div>
         </div>
@@ -154,23 +169,62 @@ const Feed = () => {
           </div>
 
           <div className="space-y-6">
-            {hangouts.map(h => (
-              <HangoutCard key={h.id} hangout={{ ...h, my_id: user.id }} onRsvp={handleRsvp} />
+            {activeHangouts.map(h => (
+              <HangoutCard key={h.id} hangout={h} onRsvp={handleRsvp} currentUserId={user?.id} />
             ))}
 
-            {hangouts.length === 0 && (
+            {activeHangouts.length === 0 && (
               <div className="text-center py-20 bg-card rounded-[3rem] border border-white/5 border-dashed space-y-4">
                 <span className="text-5xl block animate-bounce">💨</span>
                 <div className="space-y-1">
                   <p className="font-display font-black normal-case text-xl italic">Nothing planned yet 👀</p>
                   <p className="text-sm opacity-30">Drop a vibe for the crew to coordinate.</p>
                 </div>
-                <button 
+                <button
                   onClick={() => navigate('/new')}
                   className="bg-primary-red text-background px-6 py-2 rounded-full text-[10px] font-black uppercase shadow-lg shadow-primary-red/20 active:scale-95 transition-transform"
                 >
                   Plan Something +
                 </button>
+              </div>
+            )}
+
+            {/* Past hangouts — collapsible */}
+            {archivedHangouts.length > 0 && (
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowPast(!showPast)}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-2xl mb-3"
+                  style={{ background: '#16131f', border: '1px solid rgba(255,255,255,0.07)' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">📦</span>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-white/50">Past Hangouts</p>
+                      <p className="text-[10px] text-white/25 mt-0.5">
+                        {archivedHangouts.length} wrapped up
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-white/25 transition-transform duration-200"
+                    style={{ transform: showPast ? 'rotate(180deg)' : 'rotate(0)' }}>
+                    ›
+                  </span>
+                </button>
+
+                {showPast && (
+                  <div className="space-y-3 animate-in slide-in-from-top-2 duration-200">
+                    {archivedHangouts.map(h => (
+                      <HangoutCard
+                        key={h.id}
+                        hangout={h}
+                        onRsvp={handleRsvp}
+                        currentUserId={user?.id}
+                        archived
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -187,7 +241,7 @@ const Feed = () => {
                 {selectedDay?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 gap-3">
               {[
                 { id: 'free', label: "I'm Free / Down", emoji: '🕺', color: 'bg-primary-green' },
@@ -206,7 +260,7 @@ const Feed = () => {
               ))}
             </div>
 
-            <button 
+            <button
               onClick={() => setShowAvailSheet(false)}
               className="w-full text-[10px] font-black uppercase tracking-[0.2em] opacity-30 py-4"
             >

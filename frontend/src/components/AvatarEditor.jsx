@@ -3,33 +3,33 @@ import { buildAvatarUrl } from '../lib/avatar'
 
 const SKIN_COLORS = [
   { label: 'Light',      value: 'ffdbb4' },
-  { label: 'Tan',        value: 'f8d25c' },
-  { label: 'Yellow',     value: 'edb98a' },
+  { label: 'Peach',      value: 'f2d3b1' },
+  { label: 'Tan',        value: 'ecad80' },
   { label: 'Brown',      value: 'd08b5b' },
-  { label: 'Dark Brown', value: 'ae5d29' },
-  { label: 'Black',      value: '614335' },
+  { label: 'Dark',       value: 'ae5d29' },
+  { label: 'Deep',       value: '614335' },
 ]
-const HAIR_STYLES_MALE = [
-  { label: 'Short Flat',  value: 'shortHairShortFlat'   },
-  { label: 'Short Round', value: 'shortHairShortRound'  },
-  { label: 'Caesar',      value: 'shortHairTheCaesar'   },
-  { label: 'Dreads',      value: 'shortHairDreadsO1'    },
-  { label: 'Frizzle',     value: 'shortHairFrizzle'     },
-  { label: 'Shaggy',      value: 'shortHairShaggyMullet'},
+
+const HAIR_STYLES = [
+  { label: 'Short 1',  value: 'short01' },
+  { label: 'Short 2',  value: 'short02' },
+  { label: 'Short 3',  value: 'short03' },
+  { label: 'Short 4',  value: 'short04' },
+  { label: 'Short 5',  value: 'short05' },
+  { label: 'Long 1',   value: 'long01'  },
+  { label: 'Long 2',   value: 'long02'  },
+  { label: 'Long 3',   value: 'long03'  },
+  { label: 'Long 4',   value: 'long04'  },
+  { label: 'Long 5',   value: 'long05'  },
+  { label: 'Long 6',   value: 'long06'  },
+  { label: 'Long 7',   value: 'long07'  },
 ]
-const HAIR_STYLES_FEMALE = [
-  { label: 'Long',     value: 'longHairStraight' },
-  { label: 'Curly',   value: 'longHairCurly'    },
-  { label: 'Bob',     value: 'longHairBob'      },
-  { label: 'Big',     value: 'longHairBigHair'  },
-  { label: 'Bun',     value: 'longHairBun'      },
-  { label: 'Dreads',  value: 'longHairDreads'   },
-]
+
 const HAIR_COLORS = [
   { label: 'Black',    value: '2c1b18' },
-  { label: 'Brown',    value: 'a55728' },
+  { label: 'Brown',    value: 'ac6651' },
   { label: 'Auburn',   value: 'b58143' },
-  { label: 'Blonde',   value: 'f59797' },
+  { label: 'Blonde',   value: 'e8c93a' },
   { label: 'Platinum', value: 'ecdcbf' },
   { label: 'Red',      value: 'c93305' },
   { label: 'Silver',   value: '9b9b9b' },
@@ -37,39 +37,69 @@ const HAIR_COLORS = [
   { label: 'Blue',     value: '4d96ff' },
   { label: 'Purple',   value: 'c77dff' },
 ]
-const CLOTHING_COLORS = [
-  { label: 'Red',    value: 'ff6b6b' },
-  { label: 'Blue',   value: '4d96ff' },
-  { label: 'Green',  value: '6bcb77' },
-  { label: 'Purple', value: 'c77dff' },
-  { label: 'Yellow', value: 'ffd93d' },
-  { label: 'Black',  value: '262e33' },
-  { label: 'White',  value: 'e6e6e6' },
-  { label: 'Pink',   value: 'ff488e' },
+
+const EYES = [
+  { label: 'Style 1',  value: 'variant01' },
+  { label: 'Style 2',  value: 'variant02' },
+  { label: 'Style 3',  value: 'variant03' },
+  { label: 'Style 4',  value: 'variant04' },
+  { label: 'Style 5',  value: 'variant05' },
+  { label: 'Style 6',  value: 'variant06' },
+  { label: 'Style 7',  value: 'variant07' },
+  { label: 'Style 8',  value: 'variant08' },
+  { label: 'Style 9',  value: 'variant09' },
+  { label: 'Style 10', value: 'variant10' },
+  { label: 'Style 11', value: 'variant11' },
+  { label: 'Style 12', value: 'variant12' },
+  { label: 'Style 13', value: 'variant13' },
+  { label: 'Style 17', value: 'variant17' },
+  { label: 'Style 26', value: 'variant26' },
 ]
-const ACCESSORIES = [
-  { label: 'None',        value: 'none'           },
-  { label: 'Glasses',     value: 'prescription01' },
-  { label: 'Sunglasses',  value: 'sunglasses'     },
-  { label: 'Round',       value: 'round'          },
-  { label: 'Kurt',        value: 'kurt'           },
-  { label: 'Wayfarers',   value: 'wayfarers'      },
+
+const EYEBROWS = [
+  { label: 'Style 1',  value: 'variant01' },
+  { label: 'Style 2',  value: 'variant02' },
+  { label: 'Style 3',  value: 'variant03' },
+  { label: 'Style 4',  value: 'variant04' },
+  { label: 'Style 5',  value: 'variant05' },
+  { label: 'Style 6',  value: 'variant06' },
+  { label: 'Style 7',  value: 'variant07' },
+  { label: 'Style 8',  value: 'variant08' },
+  { label: 'Style 9',  value: 'variant09' },
+  { label: 'Style 10', value: 'variant10' },
 ]
-const EYE_TYPES = [
-  { label: 'Default', value: 'default' },
-  { label: 'Happy',   value: 'happy'   },
-  { label: 'Side',    value: 'side'    },
-  { label: 'Squint',  value: 'squint'  },
-  { label: 'Wink',    value: 'wink'    },
-  { label: 'Stars',   value: 'stars'   },
+
+const MOUTHS = [
+  { label: 'Style 1',  value: 'variant01' },
+  { label: 'Style 2',  value: 'variant02' },
+  { label: 'Style 3',  value: 'variant03' },
+  { label: 'Style 4',  value: 'variant04' },
+  { label: 'Style 5',  value: 'variant05' },
+  { label: 'Style 6',  value: 'variant06' },
+  { label: 'Style 7',  value: 'variant07' },
+  { label: 'Style 8',  value: 'variant08' },
+  { label: 'Style 9',  value: 'variant09' },
+  { label: 'Style 10', value: 'variant10' },
+  { label: 'Style 11', value: 'variant11' },
+  { label: 'Style 12', value: 'variant12' },
 ]
-const MOUTH_TYPES = [
-  { label: 'Smile',    value: 'smile'   },
-  { label: 'Default',  value: 'default' },
-  { label: 'Serious',  value: 'serious' },
-  { label: 'Tongue',   value: 'tongue'  },
-  { label: 'Twinkle',  value: 'twinkle' },
-  { label: 'Sad',      value: 'sad'     },
+
+const GLASSES = [
+  { label: 'None',      value: 'none'      },
+  { label: 'Style 1',   value: 'variant01' },
+  { label: 'Style 2',   value: 'variant02' },
+  { label: 'Style 3',   value: 'variant03' },
+  { label: 'Style 4',   value: 'variant04' },
+  { label: 'Style 5',   value: 'variant05' },
+]
+
+const EARRINGS = [
+  { label: 'None',      value: 'none'      },
+  { label: 'Style 1',   value: 'variant01' },
+  { label: 'Style 2',   value: 'variant02' },
+  { label: 'Style 3',   value: 'variant03' },
+  { label: 'Style 4',   value: 'variant04' },
+  { label: 'Style 5',   value: 'variant05' },
 ]
 
 const Section = ({ title, children }) => (
@@ -107,7 +137,7 @@ const OptionRow = ({ options, selected, onSelect }) => (
         className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border ${
           selected === o.value
             ? 'bg-white text-black border-white'
-            : 'bg-white/5 text-white/50 border-white/10 hover:opacity-80'
+            : 'bg-white/5 text-white/50 border-white/10'
         }`}
       >
         {o.label}
@@ -118,27 +148,21 @@ const OptionRow = ({ options, selected, onSelect }) => (
 
 const AvatarEditor = ({ user, onSave, onClose }) => {
   const [cfg, setCfg] = useState({
-    skinColor:     user?.avatar_config?.skinColor     || 'f8d25c',
-    hairStyle:     user?.avatar_config?.hairStyle     || 'shortHairShortFlat',
-    hairColor:     user?.avatar_config?.hairColor     || 'a55728',
-    facialHair:    user?.avatar_config?.facialHair    || 'none',
-    accessories:   user?.avatar_config?.accessories   || 'none',
-    clothingColor: user?.avatar_config?.clothingColor || 'ff6b6b',
-    eyeType:       user?.avatar_config?.eyeType       || 'default',
-    mouthType:     user?.avatar_config?.mouthType     || 'smile',
-    gender:        user?.avatar_config?.gender        || 'male',
+    skinColor:  user?.avatar_config?.skinColor  || 'f2d3b1',
+    hair:       user?.avatar_config?.hair       || 'short01',
+    hairColor:  user?.avatar_config?.hairColor  || 'ac6651',
+    eyes:       user?.avatar_config?.eyes       || 'variant01',
+    eyebrows:   user?.avatar_config?.eyebrows   || 'variant01',
+    mouth:      user?.avatar_config?.mouth      || 'variant01',
+    glasses:    user?.avatar_config?.glasses    || 'none',
+    earrings:   user?.avatar_config?.earrings   || 'none',
+    features:   user?.avatar_config?.features   || 'none',
   })
   const [saving, setSaving] = useState(false)
 
   const set = (key, val) => setCfg(p => ({ ...p, [key]: val }))
 
-  const hairStyles = cfg.gender === 'female' ? HAIR_STYLES_FEMALE : HAIR_STYLES_MALE
   const previewUrl = buildAvatarUrl(user?.name || 'preview', cfg)
-
-  const handleGender = (g) => {
-    set('gender', g)
-    set('hairStyle', g === 'female' ? 'longHairStraight' : 'shortHairShortFlat')
-  }
 
   const handleSave = async () => {
     setSaving(true)
@@ -187,26 +211,12 @@ const AvatarEditor = ({ user, onSave, onClose }) => {
         {/* Editor sections */}
         <div className="px-5 py-5">
 
-          <Section title="Gender Style">
-            <div className="flex gap-2">
-              {[['male','👦 Male'],['female','👧 Female'],['nonbinary','🧑 Fluid']].map(([g, label]) => (
-                <button
-                  key={g}
-                  onClick={() => handleGender(g)}
-                  className={`flex-1 py-3 rounded-2xl text-sm font-bold border transition-all ${cfg.gender === g ? 'border-white/40 bg-white/10 text-white' : 'border-white/10 bg-white/5 text-white/40'}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </Section>
-
           <Section title="Skin Tone">
             <ColorRow colors={SKIN_COLORS} selected={cfg.skinColor} onSelect={v => set('skinColor', v)} />
           </Section>
 
           <Section title="Hair Style">
-            <OptionRow options={hairStyles} selected={cfg.hairStyle} onSelect={v => set('hairStyle', v)} />
+            <OptionRow options={HAIR_STYLES} selected={cfg.hair} onSelect={v => set('hair', v)} />
           </Section>
 
           <Section title="Hair Colour">
@@ -214,19 +224,23 @@ const AvatarEditor = ({ user, onSave, onClose }) => {
           </Section>
 
           <Section title="Eyes">
-            <OptionRow options={EYE_TYPES} selected={cfg.eyeType} onSelect={v => set('eyeType', v)} />
+            <OptionRow options={EYES} selected={cfg.eyes} onSelect={v => set('eyes', v)} />
+          </Section>
+
+          <Section title="Eyebrows">
+            <OptionRow options={EYEBROWS} selected={cfg.eyebrows} onSelect={v => set('eyebrows', v)} />
           </Section>
 
           <Section title="Mouth">
-            <OptionRow options={MOUTH_TYPES} selected={cfg.mouthType} onSelect={v => set('mouthType', v)} />
+            <OptionRow options={MOUTHS} selected={cfg.mouth} onSelect={v => set('mouth', v)} />
           </Section>
 
-          <Section title="Accessories">
-            <OptionRow options={ACCESSORIES} selected={cfg.accessories} onSelect={v => set('accessories', v)} />
+          <Section title="Glasses">
+            <OptionRow options={GLASSES} selected={cfg.glasses} onSelect={v => set('glasses', v)} />
           </Section>
 
-          <Section title="Outfit Colour">
-            <ColorRow colors={CLOTHING_COLORS} selected={cfg.clothingColor} onSelect={v => set('clothingColor', v)} />
+          <Section title="Earrings">
+            <OptionRow options={EARRINGS} selected={cfg.earrings} onSelect={v => set('earrings', v)} />
           </Section>
 
         </div>
