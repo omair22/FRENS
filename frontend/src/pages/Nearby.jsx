@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getNearby, pingFren, getNearbyVenues, createHangout, updateProfile } from '../lib/api'
+import { getNearby, pingFren, getNearbyVenues, createHangout, updateStatus } from '../lib/api'
 import { useStore } from '../store/useStore'
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
@@ -125,7 +125,7 @@ const Nearby = () => {
   // Handlers
   const handleUpdateStatus = async (newStatus) => {
     try {
-      await updateProfile({ status: newStatus })
+      await updateStatus(newStatus)
       setUser({ ...currentUser, status: newStatus })
       setToast({ message: 'Status updated', type: 'success' })
       setShowStatusPicker(false)
