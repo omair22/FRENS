@@ -11,6 +11,8 @@ api.interceptors.request.use(async (config) => {
     const { data: { session } } = await supabase.auth.getSession()
     if (session?.access_token) {
       config.headers.Authorization = `Bearer ${session.access_token}`
+    } else {
+      console.warn('[API] No active session token found for request to:', config.url)
     }
   } catch (err) {
     console.error('[API] Failed to get session:', err)
