@@ -4,9 +4,9 @@ import BottomSheet from './BottomSheet'
 
 const AvatarEditor = ({ user, onSave, onClose }) => {
   const [selectedStyle, setSelectedStyle] = useState(
-    user?.avatar_config?.style || 'avataaars'
+    user?.avatar_config?.style || 'adventurer'
   )
-  const [localConfig, setLocalConfig] = useState(user?.avatar_config || { style: 'avataaars' })
+  const [localConfig, setLocalConfig] = useState(user?.avatar_config || { style: 'adventurer' })
   const [seed, setSeed] = useState(user?.name || 'you')
 
   const updateConfig = (key, value) => {
