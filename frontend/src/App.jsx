@@ -84,8 +84,15 @@ function App() {
 
         // If fully onboarded but still on onboarding page, go to feed
         const isFullyOnboarded = !!profile.name?.trim()
-        if (isFullyOnboarded && window.location.pathname.includes('onboarding')) {
-          window.location.replace('/')
+        if (isFullyOnboarded) {
+          if (window.location.pathname.includes('onboarding')) {
+            window.location.replace('/')
+          }
+        } else {
+          // Just go to onboarding — it will figure out the step
+          if (!window.location.pathname.includes('onboarding')) {
+            window.location.replace('/onboarding')
+          }
         }
       } catch (err) {
         console.error('[App] Auth error:', err.message)
