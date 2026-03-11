@@ -7,7 +7,7 @@ const AvatarEditor = ({ user, onSave, onClose }) => {
     user?.avatar_config?.style || 'adventurer'
   )
   const [localConfig, setLocalConfig] = useState(user?.avatar_config || { style: 'adventurer' })
-  const [seed, setSeed] = useState(user?.name || 'you')
+  const [seed, setSeed] = useState(user?.avatar_config?.seed || user?.name || 'you')
 
   const updateConfig = (key, value) => {
     setLocalConfig(prev => ({ ...prev, [key]: value, style: selectedStyle }))
@@ -139,7 +139,7 @@ const AvatarEditor = ({ user, onSave, onClose }) => {
         {/* Save button */}
         <div className="px-6 pb-8 pt-2 flex-shrink-0">
           <button
-            onClick={() => onSave({ ...localConfig, style: selectedStyle })}
+            onClick={() => onSave({ ...localConfig, style: selectedStyle, seed })}
             className="w-full py-4 rounded-2xl font-black text-base active:scale-95 transition-all shadow-lg"
             style={{ background: '#ff6b6b', color: '#fff', boxShadow: '0 4px 20px rgba(255,107,107,0.3)' }}>
             Save Avatar

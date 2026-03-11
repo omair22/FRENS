@@ -186,19 +186,27 @@ export const DEFAULT_AVATAR_CONFIG = {
   mouth: 'variant01'
 }
 
-export const buildAvatarUrl = (seed, config = {}) => {
+export const buildAvatarUrl = (name, config = {}) => {
   const style = config.style || 'adventurer'
   const params = new URLSearchParams()
   
-  params.set('seed', seed || 'you')
+  // Use config.seed if present (randomized), otherwise fallback to user name
+  const seed = config.seed || name || 'you'
+  params.set('seed', seed)
   
-  // Add all config keys as params except 'style'
+  // Get allowed options for this style to avoid parameter pollution
+  const allowedOptions = STYLE_OPTIONS[style] || {}
+  
+  // Add relevant config keys as params
   Object.entries(config).forEach(([key, value]) => {
-    if (key !== 'style' && value !== undefined && value !== null) {
+    // Only set if it's a valid option for this style OR it's a known global override (size, etc)
+    const isGlobal = ['flip', 'rotate', 'scale', 'radius', 'size', 'backgroundColor'].includes(key)
+    const isValidOption = allowedOptions[key] !== undefined
+    
+    if ((isGlobal || isValidOption) && value !== undefined && value !== null) {
       params.set(key, value)
       
       // Auto-handle probabilities for optional features
-      // If a feature is selected and isn't 'none', set its probability to 100
       const featuresWithProbabilities = ['accessories', 'facialHair', 'earrings', 'glasses', 'beard', 'mouth', 'sides']
       if (featuresWithProbabilities.includes(key) && value !== 'none') {
         params.set(`${key}Probability`, '100')

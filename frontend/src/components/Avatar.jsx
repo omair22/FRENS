@@ -15,8 +15,14 @@ const STATUS_COLORS = {
  * Always renders something — falls back to DEFAULT_AVATAR_CONFIG if config is empty/null.
  */
 const Avatar = ({ name, config, size = 40, status, className = '', onClick }) => {
-  // Merge with defaults so an empty {} or null/undefined always shows a full avatar
-  const mergedConfig = { ...DEFAULT_AVATAR_CONFIG, ...(config || {}) }
+  // Merge with defaults so an empty {} or null/undefined always shows a full avatar.
+  // HOWEVER, only merge if the style matches the default, otherwise we might
+  // pollute other styles with Adventurer-specific parameters like 'hair'
+  const isDefaultStyle = (config?.style || DEFAULT_AVATAR_CONFIG.style) === DEFAULT_AVATAR_CONFIG.style
+  const mergedConfig = isDefaultStyle 
+    ? { ...DEFAULT_AVATAR_CONFIG, ...(config || {}) }
+    : (config || {})
+    
   const url = buildAvatarUrl(name, mergedConfig)
   const dotSize = Math.round(size * 0.28)
 
