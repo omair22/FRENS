@@ -56,6 +56,22 @@ const Onboarding = () => {
     }
   }
 
+  const handleGoogleAuth = async () => {
+    try {
+      setLoading(true)
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      })
+      if (error) throw error
+    } catch (err) {
+      setError(err.message)
+      setLoading(false)
+    }
+  }
+
   const handleFinish = async () => {
     setLoading(true)
     setError(null)
@@ -79,7 +95,7 @@ const Onboarding = () => {
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h2 className="text-3xl font-display font-black leading-tight italic">
-              get in here <br/> bestie 💅
+              get in here <br /> bestie 💅
             </h2>
             <div className="flex flex-col gap-3">
               <button onClick={() => { setIsLogin(true); setStep(2); }} className="w-full btn-primary bg-primary-red text-background">
@@ -87,6 +103,17 @@ const Onboarding = () => {
               </button>
               <button onClick={() => { setIsLogin(false); setStep(2); }} className="w-full btn-primary bg-white/5 text-white/60 border border-white/5">
                 New Account
+              </button>
+
+              <div className="flex items-center gap-3 my-1">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-[10px] font-black uppercase text-white/30 tracking-widest">or</span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
+
+              <button onClick={handleGoogleAuth} className="w-full btn-primary bg-white text-black border border-white/10 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-4 h-4" />
+                Continue with Google
               </button>
             </div>
           </div>
@@ -129,7 +156,7 @@ const Onboarding = () => {
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
             <h2 className="text-3xl font-display font-black leading-tight italic">
-              lastly, <br/> who are you? 👀
+              lastly, <br /> who are you? 👀
             </h2>
 
             <input
