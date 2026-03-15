@@ -1,0 +1,23 @@
+# Local Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+dist/
+build/
+
+# IDEs
+.vscode/
+.idea/
+
+# Secret Files
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+
+# OS files
+.DS_Store
+Thumbs.db

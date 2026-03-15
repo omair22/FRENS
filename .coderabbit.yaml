@@ -1,0 +1,22 @@
+# CodeRabbit Configuration
+# Documentation: https://docs.coderabbit.ai/
+
+language: "en-US"
+
+reviews:
+  profile: "chill" # Options: chill, assertive, comprehensive
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "main"
+      - "master"
+      - "develop"
+
+chat:
+  enabled: true
+
+# Optional: Ignore certain files or patterns
+# path_filters:
+#   - "!dist/**"
+#   - "!node_modules/**"
