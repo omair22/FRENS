@@ -11,7 +11,7 @@ const router = express.Router()
  */
 router.get('/search', authMiddleware, async (req, res) => {
   try {
-    const { q } = req.query
+    const q = String(req.query.q || '')
     if (!q || q.length < 2) return res.json([])
 
     const { data, error } = await supabase
