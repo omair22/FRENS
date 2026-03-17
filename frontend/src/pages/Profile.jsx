@@ -13,7 +13,7 @@ const STATUS_OPTIONS = [
 ]
 
 const Profile = () => {
-  const { user, setUser, setToast } = useStore()
+  const { user, setUser, setToast, setAuthPrompt } = useStore()
   const navigate = useNavigate()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -21,11 +21,15 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState('hangouts')
 
   useEffect(() => {
+    if (user?.isGuest) {
+      setAuthPrompt('profile')
+      return
+    }
     Promise.all([getMyProfile(), getUserStats()])
       .then(([p, s]) => { setUser(p.data); setStats(s.data) })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [])
+  }, [user?.isGuest])
 
   const handleStatusUpdate = async (s) => {
     try {

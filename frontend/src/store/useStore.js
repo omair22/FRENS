@@ -11,6 +11,7 @@ export const useStore = create(
       toast: null,
       pendingRequestCount: 0,
       unreadCount: 0,
+      authPrompt: null,
       
       setUser: (user) => set({ user }),
       setFrens: (frens) => set({ frens }),
@@ -19,6 +20,8 @@ export const useStore = create(
       setPendingRequestCount: (pendingRequestCount) => set({ pendingRequestCount }),
       setUnreadCount: (unreadCount) => set({ unreadCount }),
       incrementUnread: () => set(state => ({ unreadCount: state.unreadCount + 1 })),
+      setAuthPrompt: (feature) => set({ authPrompt: feature }),
+      clearAuthPrompt: () => set({ authPrompt: null }),
       
       activeFab: null,
       setActiveFab: (activeFab) => set({ activeFab }),

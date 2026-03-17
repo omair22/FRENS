@@ -39,7 +39,7 @@ const Icons = {
 }
 
 const BottomNav = () => {
-  const { pendingRequestCount, setPendingRequestCount, activeFab } = useStore()
+  const { user, pendingRequestCount, setPendingRequestCount, activeFab, setAuthPrompt } = useStore()
 
   const fetchRequestCount = async () => {
     try {
@@ -55,11 +55,11 @@ const BottomNav = () => {
   }, [])
 
   const tabs = [
-    { path: '/', label: 'Home', Icon: Icons.House },
-    { path: '/frens', label: 'Frens', Icon: Icons.Users, badge: pendingRequestCount },
-    { path: '/new', label: null, Icon: Icons.Plus, isFab: true },
-    { path: '/nearby', label: 'Nearby', Icon: Icons.MapPin },
-    { path: '/profile', label: 'Me', Icon: Icons.User },
+    { path: '/', label: 'Home', Icon: Icons.House, feature: 'default' },
+    { path: '/frens', label: 'Frens', Icon: Icons.Users, badge: pendingRequestCount, feature: 'add-fren' },
+    { path: '/new', label: null, Icon: Icons.Plus, isFab: true, feature: 'create-hangout' },
+    { path: '/nearby', label: 'Nearby', Icon: Icons.MapPin, feature: 'nearby' },
+    { path: '/profile', label: 'Me', Icon: Icons.User, feature: 'profile' },
   ]
 
   return (
@@ -76,6 +76,17 @@ const BottomNav = () => {
         style={{ paddingLeft: 8, paddingRight: 8 }}
       >
         {tabs.map((tab) => {
+          const handleClick = (e) => {
+            if (user?.isGuest) {
+              e.preventDefault()
+              setAuthPrompt(tab.feature)
+              return
+            }
+            if (tab.isFab && activeFab?.onClick) {
+              activeFab.onClick(e)
+            }
+          }
+
           if (tab.isFab) {
             // Center FAB — slightly elevated
             const fabTarget = activeFab ?? tab
@@ -83,7 +94,7 @@ const BottomNav = () => {
               <NavLink
                 key={tab.path}
                 to={fabTarget.path || tab.path}
-                onClick={activeFab?.onClick}
+                onClick={handleClick}
                 className="flex items-center justify-center flex-shrink-0"
                 style={{ width: 48, height: 48, borderRadius: 12, background: '#f5f5f5', color: '#0a0a0a' }}
               >
@@ -97,6 +108,7 @@ const BottomNav = () => {
               key={tab.path}
               to={tab.path}
               end={tab.path === '/'}
+              onClick={handleClick}
               className="relative flex-shrink-0"
               style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >

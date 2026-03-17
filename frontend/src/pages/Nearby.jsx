@@ -20,7 +20,7 @@ const statusColor = (status) => {
 
 const Nearby = () => {
   const navigate = useNavigate()
-  const { user: currentUser, setToast, setUser } = useStore()
+  const { user: currentUser, setToast, setUser, setAuthPrompt } = useStore()
 
   // App state
   const [frens, setFrens] = useState([]) // Was nearbyFrens
@@ -60,6 +60,11 @@ const Nearby = () => {
 
   // Geolocation & Frens Fetching
   useEffect(() => {
+    if (currentUser?.isGuest) {
+      setAuthPrompt('nearby')
+      return
+    }
+
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -76,7 +81,7 @@ const Nearby = () => {
     } else {
       setLoading(false)
     }
-  }, [])
+  }, [currentUser?.isGuest])
 
   const fetchNearby = async (lat, lng) => {
     try {
@@ -175,7 +180,13 @@ const Nearby = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '56px 20px 12px' }}>
         <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 700, color: '#f5f5f5', margin: 0 }}>Nearby</h1>
         <button
-          onClick={() => setShowStatusPicker(true)}
+          onClick={() => {
+            if (currentUser?.isGuest) {
+              setAuthPrompt('profile')
+              return
+            }
+            setShowStatusPicker(true)
+          }}
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '6px 14px', borderRadius: 9999,

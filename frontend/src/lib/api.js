@@ -2,7 +2,7 @@ import axios from 'axios'
 import { supabase } from './supabase.js'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
 })
 
 // Attach Supabase JWT to every request
@@ -12,7 +12,18 @@ api.interceptors.request.use(async (config) => {
     if (session?.access_token) {
       config.headers.Authorization = `Bearer ${session.access_token}`
     } else {
-      console.warn('[API] No active session token found for request to:', config.url)
+      // Check for guest identity
+      const guestRaw = localStorage.getItem('frens_guest')
+      if (guestRaw) {
+        try {
+          const guest = JSON.parse(guestRaw)
+          if (guest?.id) {
+            config.headers['x-guest-id'] = guest.id
+          }
+        } catch {}
+      } else {
+        console.warn('[API] No active session or guest identity found for:', config.url)
+      }
     }
   } catch (err) {
     console.error('[API] Failed to get session:', err)
@@ -25,7 +36,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error('[API] Error:', error.response?.status, error.response?.data)
-    return Promise.reject(error)
+    return Promise.reject(error.response?.data || error)
   }
 )
 
@@ -229,5 +240,24 @@ export const getNearbyVenues = (lat, lng, category = 'all') =>
 
 export const getVenueDetails = (placeId) =>
   api.get(`/venues/${placeId}`)
+
+// Invite / Guest
+export const getPublicHangout = (id) =>
+  api.get(`/invite/${id}/public`)
+
+export const guestRsvp = (id, data) =>
+  api.post(`/invite/${id}/rsvp`, data)
+
+export const guestTimeVote = (id, proposalId, interest, token) =>
+  api.post(`/invite/${id}/time-vote`, { proposalId, interest, token })
+
+export const guestIdeaVote = (id, ideaId, vote, token) =>
+  api.post(`/invite/${id}/idea-vote`, { ideaId, vote, token })
+
+export const guestSuggestIdea = (id, data) =>
+  api.post(`/invite/${id}/suggest-idea`, data)
+
+export const linkGuestRsvps = (userId, tokens) =>
+  api.patch('/invite/link-guest-rsvps', { userId, tokens })
 
 export default api

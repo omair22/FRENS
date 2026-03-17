@@ -10,6 +10,7 @@ const router = express.Router()
  * Returns users with relationship status for each result
  */
 router.get('/search', authMiddleware, async (req, res) => {
+  if (req.user.isGuest) return res.json([])
   try {
     const q = String(req.query.q || '')
     if (!q || q.length < 2) return res.json([])
@@ -71,6 +72,7 @@ router.get('/search', authMiddleware, async (req, res) => {
  * Get incoming + outgoing pending requests
  */
 router.get('/requests', authMiddleware, async (req, res) => {
+  if (req.user.isGuest) return res.json({ incoming: [], outgoing: [] })
   try {
     const [{ data: incoming }, { data: outgoing }] = await Promise.all([
       supabase.from('friendships').select('id, user_id, created_at').eq('fren_id', req.user.id).eq('status', 'pending'),
@@ -107,6 +109,7 @@ router.get('/requests', authMiddleware, async (req, res) => {
  * Returns ACCEPTED frens, sorted by closeness (shared hangouts)
  */
 router.get('/', authMiddleware, async (req, res) => {
+  if (req.user.isGuest) return res.json([])
   try {
     // Step 1: get fren IDs
     const { data: friendships } = await supabase
@@ -182,6 +185,7 @@ router.get('/', authMiddleware, async (req, res) => {
  * POST /api/frens/add — Send a fren request
  */
 router.post('/add', authMiddleware, async (req, res) => {
+  if (req.user.isGuest) return res.status(403).json({ error: 'Guests cannot add frens' })
   try {
     const { frenId } = req.body
     if (!frenId) return res.status(400).json({ error: 'frenId required' })
@@ -237,6 +241,7 @@ router.post('/add', authMiddleware, async (req, res) => {
  * POST /api/frens/accept
  */
 router.post('/accept', authMiddleware, async (req, res) => {
+  if (req.user.isGuest) return res.status(403).json({ error: 'Guests cannot accept frens' })
   try {
     const { requestId } = req.body
     if (!requestId) return res.status(400).json({ error: 'requestId required' })
@@ -267,73 +272,10 @@ router.post('/accept', authMiddleware, async (req, res) => {
 })
 
 /**
- * POST /api/frens/decline
- */
-router.post('/decline', authMiddleware, async (req, res) => {
-  try {
-    const { requestId } = req.body
-    if (!requestId) return res.status(400).json({ error: 'requestId required' })
-
-    const { error } = await supabase.from('friendships')
-      .update({ status: 'declined', responded_at: new Date().toISOString() })
-      .eq('id', requestId).eq('fren_id', req.user.id).eq('status', 'pending')
-
-    if (error) throw error
-    res.json({ success: true })
-  } catch (err) {
-    console.error('[DECLINE]', err)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-/**
- * POST /api/frens/:id/ping
- */
-router.post('/:id/ping', authMiddleware, async (req, res) => {
-  try {
-    const { timeOffsetMinutes, timeLabel } = req.body
-
-    const { data: pinger } = await supabase
-      .from('users').select('name').eq('id', req.user.id).single()
-
-    // Build notification body based on time
-    let body
-    if (timeLabel) {
-      body = `${pinger.name} wants to hang — meet ${timeLabel}`
-    } else {
-      body = `${pinger.name} is nearby and wants to hang`
-    }
-
-    // Compute actual datetime if offset provided
-    let meetAt = null
-    if (timeOffsetMinutes !== undefined && timeOffsetMinutes !== null) {
-      const d = new Date()
-      d.setMinutes(d.getMinutes() + timeOffsetMinutes)
-      meetAt = d.toISOString()
-    }
-
-    await notify(req.params.id, {
-      type: 'nearby_ping',
-      title: 'Ping!',
-      body,
-      data: {
-        fromUserId: req.user.id,
-        fromName: pinger.name,
-        meetAt,
-        timeLabel: timeLabel || null
-      }
-    })
-
-    res.json({ success: true })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
-
-/**
  * DELETE /api/frens/:id — Remove a fren (both directions)
  */
 router.delete('/:id', authMiddleware, async (req, res) => {
+  if (req.user.isGuest) return res.status(403).json({ error: 'Guests cannot remove frens' })
   try {
     const { error } = await supabase.from('friendships').delete()
       .or(`and(user_id.eq.${req.user.id},fren_id.eq.${req.params.id}),and(user_id.eq.${req.params.id},fren_id.eq.${req.user.id})`)

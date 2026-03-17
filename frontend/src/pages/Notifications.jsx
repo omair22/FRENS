@@ -85,11 +85,17 @@ const NotifCard = ({ notif, onTap, onDelete }) => {
 
 const Notifications = () => {
   const navigate = useNavigate()
-  const { setUnreadCount, setToast } = useStore()
+  const { setUnreadCount, setToast, user, setAuthPrompt } = useStore()
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { loadNotifications() }, [])
+  useEffect(() => {
+    if (user?.isGuest) {
+      setAuthPrompt('notifications')
+      return
+    }
+    loadNotifications()
+  }, [user?.isGuest])
 
   const loadNotifications = async () => {
     try {

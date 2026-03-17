@@ -9,6 +9,7 @@ const router = express.Router()
  * Get AI scheduling suggestion for the current user's friend group
  */
 router.get('/suggest', authMiddleware, async (req, res) => {
+  if (req.user.isGuest) return res.json({ suggestion: null, reason: 'Sign up to get personalized AI vibes!' })
   try {
     // Get frens
     const { data: friendships } = await supabase

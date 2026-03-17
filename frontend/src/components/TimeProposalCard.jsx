@@ -4,13 +4,14 @@ import Avatar from './Avatar'
 const TimeProposalCard = ({ proposal, onVote, myVote, isHost, onAccept, onDelete }) => {
   const { id, datetime, label, votes } = proposal
 
-  const inVotes = votes?.filter(v => v.interest === 'in') || []
-  const maybeVotes = votes?.filter(v => v.interest === 'maybe') || []
-  const outVotes = votes?.filter(v => v.interest === 'out') || []
+  const inVotes = votes?.filter(v => v.interest === 100) || []
+  const maybeVotes = votes?.filter(v => v.interest === 50) || []
+  const outVotes = votes?.filter(v => v.interest === 0) || []
 
-  const dateObj = new Date(datetime)
-  const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-  const timeStr = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+  const propDatetime = proposal.proposed_datetime || proposal.datetime
+  const dateObj = new Date(propDatetime)
+  const dateStr = propDatetime ? dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Invalid Date'
+  const timeStr = propDatetime ? dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : ''
 
   return (
     <div
@@ -81,9 +82,9 @@ const TimeProposalCard = ({ proposal, onVote, myVote, isHost, onAccept, onDelete
       {/* Actions */}
       <div style={{ display: 'flex', gap: 8 }}>
         {[
-          { id: 'in', label: 'In' },
-          { id: 'maybe', label: 'Maybe' },
-          { id: 'out', label: 'Out' },
+          { id: 100, label: 'In' },
+          { id: 50, label: 'Maybe' },
+          { id: 0, label: 'Out' },
         ].map(v => {
           const isActive = myVote === v.id
           return (

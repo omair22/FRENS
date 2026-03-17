@@ -2,6 +2,7 @@ import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Avatar from './Avatar'
 import RsvpButtons from './RsvpButtons'
+import CountdownTimer from './CountdownTimer'
 
 const HangoutCard = ({ hangout, onRsvp, currentUserId, archived = false }) => {
   const navigate = useNavigate()
@@ -56,9 +57,12 @@ const HangoutCard = ({ hangout, onRsvp, currentUserId, archived = false }) => {
                 {title}
               </h3>
             </div>
-            <span className="chip" style={{ flexShrink: 0 }}>
-              {is_public ? 'Public' : 'Private'}
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+              <span className="chip" style={{ flexShrink: 0 }}>
+                {is_public ? 'Public' : 'Private'}
+              </span>
+              <CountdownTimer targetDate={datetime} />
+            </div>
           </div>
 
           {/* Second row: date */}

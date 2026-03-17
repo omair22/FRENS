@@ -11,6 +11,8 @@ import usersRoutes from './routes/users.js'
 import nearbyRoutes from './routes/nearby.js'
 import notificationsRoutes from './routes/notifications.js'
 import venuesRoutes from './routes/venues.js'
+import inviteRoutes from './routes/invite.js'
+import ogRoutes from './routes/og.js'
 import { archivePassedHangouts } from './lib/archiveHangouts.js'
 
 dotenv.config()
@@ -40,6 +42,8 @@ app.use('/api/users', usersRoutes)
 app.use('/api/nearby', nearbyRoutes)
 app.use('/api/notifications', notificationsRoutes)
 app.use('/api/venues', venuesRoutes)
+app.use('/api/invite', inviteRoutes)
+app.use('/api/og', ogRoutes)
 
 // The Sentry error handler must be registered before any other error middleware and after all controllers
 import * as Sentry from "@sentry/node";

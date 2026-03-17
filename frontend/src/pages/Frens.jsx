@@ -12,7 +12,7 @@ const SearchIcon = () => (
 )
 
 const Frens = () => {
-  const { user, setToast } = useStore()
+  const { user, setToast, setAuthPrompt } = useStore()
   const navigate = useNavigate()
 
   const [frens, setFrens] = useState([])
@@ -22,7 +22,13 @@ const Frens = () => {
   const [searching, setSearching] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { loadData() }, [])
+  useEffect(() => {
+    if (user?.isGuest) {
+      setAuthPrompt('add-fren')
+      return
+    }
+    loadData()
+  }, [user?.isGuest])
 
   useEffect(() => {
     if (searchQuery.length < 2) { setSearchResults([]); return }

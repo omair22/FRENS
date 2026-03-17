@@ -70,8 +70,8 @@ const AvatarEditor = ({ user, onSave, onClose }) => {
               onClick={() => handleStyleChange(s.id)}
               className="flex-shrink-0 flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl transition-all"
               style={{
-                background: selectedStyle === s.id 
-                  ? '#1a1a1a' 
+                background: selectedStyle === s.id
+                  ? '#1a1a1a'
                   : '#111111',
                 border: selectedStyle === s.id
                   ? '1px solid rgba(255,255,255,0.2)'
@@ -96,7 +96,7 @@ const AvatarEditor = ({ user, onSave, onClose }) => {
                 style={{ color: 'rgba(255,255,255,0.3)' }}>
                 {option.label}
               </p>
-              
+
               {option.type === 'swatch' ? (
                 <div className="flex flex-wrap gap-2.5">
                   {option.values.map(hex => (
@@ -105,13 +105,13 @@ const AvatarEditor = ({ user, onSave, onClose }) => {
                       className="w-8 h-8 rounded-full transition-all active:scale-90"
                       style={{
                         background: hex === 'transparent' ? 'transparent' : `#${hex}`,
-                        border: localConfig[key] === hex 
-                          ? '3px solid white' 
+                        border: localConfig[key] === hex
+                          ? '3px solid white'
                           : '2px solid rgba(255,255,255,0.1)',
-                        boxShadow: localConfig[key] === hex 
-                          ? '0 0 0 2px #ff6b6b' 
+                        boxShadow: localConfig[key] === hex
+                          ? '0 0 0 2px #ff6b6b'
                           : 'none',
-                        backgroundImage: hex === 'transparent' 
+                        backgroundImage: hex === 'transparent'
                           ? 'repeating-conic-gradient(#808080 0% 25%, transparent 0% 50%) 0 0 / 8px 8px'
                           : 'none'
                       }}
@@ -125,11 +125,11 @@ const AvatarEditor = ({ user, onSave, onClose }) => {
                       onClick={() => updateConfig(key, val)}
                       className="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all capitalize whitespace-nowrap"
                       style={{
-                        background: localConfig[key] === val 
-                          ? '#f5f5f5' 
+                        background: localConfig[key] === val
+                          ? '#f5f5f5'
                           : '#1a1a1a',
-                        color: localConfig[key] === val 
-                          ? '#0a0a0a' 
+                        color: localConfig[key] === val
+                          ? '#0a0a0a'
                           : '#666666',
                         border: localConfig[key] === val
                           ? 'none'

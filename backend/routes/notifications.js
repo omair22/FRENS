@@ -6,6 +6,7 @@ const router = express.Router()
 
 /** GET / — my notifications (newest first, max 50) */
 router.get('/', authMiddleware, async (req, res) => {
+  if (req.user.isGuest) return res.json([])
   try {
     const { data, error } = await supabase
       .from('notifications')
@@ -22,6 +23,7 @@ router.get('/', authMiddleware, async (req, res) => {
 
 /** GET /unread-count */
 router.get('/unread-count', authMiddleware, async (req, res) => {
+  if (req.user.isGuest) return res.json({ count: 0 })
   try {
     const { count, error } = await supabase
       .from('notifications')

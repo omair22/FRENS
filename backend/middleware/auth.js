@@ -4,6 +4,11 @@ export const authMiddleware = async (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1]
 
   if (!token) {
+    const guestId = req.headers['x-guest-id']
+    if (guestId) {
+      req.user = { id: guestId, isGuest: true }
+      return next()
+    }
     return res.status(401).json({ error: 'No token provided' })
   }
 

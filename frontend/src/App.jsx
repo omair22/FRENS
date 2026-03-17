@@ -14,9 +14,11 @@ import Nearby from './pages/Nearby'
 import Profile from './pages/Profile'
 import FrenProfile from './pages/FrenProfile'
 import Frens from './pages/Frens'
+import HangoutInvite from './pages/HangoutInvite'
 import Settings from './pages/Settings'
 import Notifications from './pages/Notifications'
 import BottomNav from './components/BottomNav'
+import AuthPromptSheet from './components/AuthPromptSheet'
 
 const ProtectedRoute = ({ children, authLoading }) => {
   const user = useStore((state) => state.user)
@@ -27,7 +29,7 @@ const ProtectedRoute = ({ children, authLoading }) => {
     </div>
   )
 
-  if (!user?.name) return <Navigate to="/onboarding" replace />
+  if (!user) return <Navigate to="/onboarding" replace />
 
   return (
     <>
@@ -41,7 +43,7 @@ const ProtectedRoute = ({ children, authLoading }) => {
 
 
 function App() {
-  const { user, setUser, toast, setToast, setUnreadCount, incrementUnread } = useStore()
+  const { user, setUser, toast, setToast, setUnreadCount, incrementUnread, authPrompt, clearAuthPrompt } = useStore()
   const [authLoading, setAuthLoading] = useState(true)
   const userRef = useRef(user)
 
@@ -107,6 +109,18 @@ function App() {
       if (session?.user) {
         await handleAuth(session.user, { showLoader: true })
       } else {
+        const guestRaw = localStorage.getItem('frens_guest')
+        if (guestRaw) {
+          try {
+            const guest = JSON.parse(guestRaw)
+            if (guest?.isGuest && guest?.name) {
+              setUser(guest)
+              setAuthLoading(false)
+              return
+            }
+          } catch {}
+        }
+
         setUser(null)
         setAuthLoading(false)
       }
@@ -147,7 +161,7 @@ function App() {
 
   // Poll unread notification count every 30s
   useEffect(() => {
-    if (!user?.name) return
+    if (!user?.name || user?.isGuest) return
     const fetchCount = async () => {
       try {
         const res = await getUnreadCount()
@@ -161,7 +175,7 @@ function App() {
 
   // Realtime notification toasts
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id || user?.isGuest) return
     const channel = supabase
       .channel('notifications-realtime')
       .on('postgres_changes', {
@@ -183,6 +197,7 @@ function App() {
       <div className="min-h-screen bg-background text-white selection:bg-primary-red/30">
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/h/:id" element={<HangoutInvite />} />
           <Route path="/" element={<ProtectedRoute authLoading={authLoading}><Feed /></ProtectedRoute>} />
           <Route path="/new" element={<ProtectedRoute authLoading={authLoading}><NewHangout /></ProtectedRoute>} />
           <Route path="/hangout/:id" element={<ProtectedRoute authLoading={authLoading}><HangoutDetail /></ProtectedRoute>} />
@@ -195,6 +210,11 @@ function App() {
           <Route path="/notifications" element={<ProtectedRoute authLoading={authLoading}><Notifications /></ProtectedRoute>} />
         </Routes>
         {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+        <AuthPromptSheet
+          isOpen={!!authPrompt}
+          onClose={clearAuthPrompt}
+          feature={authPrompt}
+        />
       </div>
     </Router>
   )

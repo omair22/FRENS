@@ -23,11 +23,8 @@ router.get('/', authMiddleware, async (req, res) => {
     // Auto-archive before fetching — keeps list fresh
     await archivePassedHangouts()
 
-    const { data: friendships } = await supabase.from('friendships').select('fren_id').eq('user_id', req.user.id).eq('status', 'accepted')
-    const frenIds = (friendships || []).map(f => f.fren_id)
-    frenIds.push(req.user.id)
-
-    const { data, error } = await supabase
+    const isGuest = req.user.isGuest
+    let query = supabase
       .from('hangouts')
       .select(`
         *,
@@ -36,8 +33,17 @@ router.get('/', authMiddleware, async (req, res) => {
         vibe_options(*, vibe_votes(*)),
         stops_count:hangout_stops(count)
       `)
-      .in('created_by', frenIds)
-      .order('datetime', { ascending: true, nullsFirst: false })
+
+    if (isGuest) {
+      query = query.eq('is_public', true)
+    } else {
+      const { data: friendships } = await supabase.from('friendships').select('fren_id').eq('user_id', req.user.id).eq('status', 'accepted')
+      const frenIds = (friendships || []).map(f => f.fren_id)
+      frenIds.push(req.user.id)
+      query = query.in('created_by', frenIds)
+    }
+
+    const { data, error } = await query.order('datetime', { ascending: true, nullsFirst: false })
 
     if (error) throw error
     res.json(data)

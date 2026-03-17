@@ -15,7 +15,7 @@ const BellIcon = () => (
 )
 
 const Feed = () => {
-  const { user, hangouts, frens, unreadCount, setHangouts, setFrens, setToast } = useStore()
+  const { user, hangouts, frens, unreadCount, setHangouts, setFrens, setToast, setAuthPrompt } = useStore()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -114,7 +114,13 @@ const Feed = () => {
             {greeting}, {firstName}
           </h1>
           <button
-            onClick={() => navigate('/notifications')}
+            onClick={() => {
+              if (user?.isGuest) {
+                setAuthPrompt('notifications')
+                return
+              }
+              navigate('/notifications')
+            }}
             style={{
               width: 40, height: 40, borderRadius: '50%',
               background: '#111111',
@@ -161,7 +167,14 @@ const Feed = () => {
               return (
                 <button
                   key={i}
-                  onClick={() => { setSelectedDay(date); setShowAvailSheet(true) }}
+                  onClick={() => {
+                    if (user?.isGuest) {
+                      setAuthPrompt('default')
+                      return
+                    }
+                    setSelectedDay(date)
+                    setShowAvailSheet(true)
+                  }}
                   style={{
                     flexShrink: 0,
                     width: 52,
@@ -269,7 +282,13 @@ const Feed = () => {
                   Drop a vibe for the crew.
                 </p>
                 <button
-                  onClick={() => navigate('/new')}
+                  onClick={() => {
+                    if (user?.isGuest) {
+                      setAuthPrompt('create-hangout')
+                      return
+                    }
+                    navigate('/new')
+                  }}
                   className="btn-primary"
                   style={{ width: 'auto', padding: '0 24px', display: 'inline-flex' }}
                 >

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { linkGuestRsvps } from '../lib/api'
+import { useStore } from '../store/useStore'
 import AvatarEditor from '../components/AvatarEditor'
 
 const BackIcon = () => (
   <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-    <path d="M19 12H5M12 5l-7 7 7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M19 12H5M12 5l-7 7 7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
@@ -13,11 +15,12 @@ const TOTAL_STEPS = 4
 
 const Onboarding = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [step, setStep] = useState(1)
-  const [mode, setMode] = useState('landing') // 'landing' | 'signin' | 'signup'
+  const [mode, setMode] = useState('landing') // 'landing' | 'signin' | 'signup' | 'guest'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
+  const [name, setName] = useState(searchParams.get('name') || '')
   const [nameAvailable, setNameAvailable] = useState(null)
   const [checkingName, setCheckingName] = useState(false)
   const [agreed, setAgreed] = useState({ terms: false, age: false })
@@ -25,12 +28,37 @@ const Onboarding = () => {
   const [error, setError] = useState('')
   const [avatarConfig, setAvatarConfig] = useState(null)
 
-  // Check if user is already logged in
+  const { setUser } = useStore()
+
+  // Link guest RSVPs after signup
+  const handleLinkRSVPs = async (userId) => {
+    const tokens = JSON.parse(localStorage.getItem('frens_all_guest_tokens') || '[]')
+    if (tokens.length > 0) {
+      try {
+        await linkGuestRsvps(userId, tokens)
+        localStorage.removeItem('frens_all_guest_tokens')
+      } catch (e) {
+        console.error('Failed to link guest RSVPs', e)
+      }
+    }
+  }
+
+  useEffect(() => {
+    const nameParam = searchParams.get('name')
+    if (nameParam) {
+      setMode('signup')
+      setStep(2) // Jump to signup step
+    }
+  }, [searchParams])
+
+  // Check if user is already logged in (Supabase)
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data?.session) navigate('/', { replace: true })
+      if (data?.session) {
+        navigate('/', { replace: true })
+      }
     })
-  }, [])
+  }, [navigate])
 
   // Debounce name check
   useEffect(() => {
@@ -66,8 +94,13 @@ const Onboarding = () => {
         if (error) throw error
         setStep(3)
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { data: { user }, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
+
+        if (user) {
+          await handleLinkRSVPs(user.id)
+        }
+
         navigate('/', { replace: true })
       }
     } catch (err) {
@@ -94,6 +127,27 @@ const Onboarding = () => {
     if (!agreed.terms || !agreed.age) return
     setLoading(true)
     try {
+      if (mode === 'guest') {
+        const guestUser = {
+          id: 'guest_' + Math.random().toString(36).substring(7),
+          name: name.trim(),
+          isGuest: true,
+          avatar_config: avatarConfig || { style: 'adventurer', config: {} },
+          status: 'free'
+        }
+        localStorage.setItem('frens_guest', JSON.stringify(guestUser))
+        setUser(guestUser)
+        
+        // If they came from an invite link, go back to it
+        const returnTo = searchParams.get('returnTo')
+        if (returnTo) {
+          navigate(returnTo)
+        } else {
+          navigate('/')
+        }
+        return
+      }
+
       if (avatarConfig) {
         const { data: { session } } = await supabase.auth.getSession()
         await fetch('/api/users/me/avatar', {
@@ -132,7 +186,7 @@ const Onboarding = () => {
             onClick={() => { setMode('signup'); setStep(2) }}
             style={{
               height: 52, borderRadius: 12,
-              background: 'transparent',
+              background: '#111111',
               border: '1px solid rgba(255,255,255,0.15)',
               color: '#f5f5f5',
               fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 600,
@@ -141,7 +195,68 @@ const Onboarding = () => {
           >
             Create Account
           </button>
+          <div style={{ marginTop: 12, textAlign: 'center' }}>
+            <button
+              onClick={() => { setMode('guest'); setStep(1) }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#3a3a3a',
+                fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              Continue as guest →
+            </button>
+          </div>
         </div>
+      </div>
+    )
+  }
+
+  // ── Guest Name Input Inline (Step 1 override) ──
+  if (step === 1 && mode === 'guest') {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', padding: '56px 24px 48px' }}>
+        <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 24, fontWeight: 800, color: '#f5f5f5', margin: '0 0 8px' }}>
+          What should we call you?
+        </h1>
+        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#666666', margin: '0 0 32px' }}>
+          No account needed
+        </p>
+
+        <input
+          autoFocus
+          type="text"
+          placeholder="Your name"
+          className="input-frens"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          style={{ marginBottom: 24 }}
+        />
+
+        <button
+          onClick={() => setStep(3)} // Go to Avatar picking step
+          disabled={name.trim().length < 2}
+          className="btn-primary"
+          style={{ marginBottom: 16 }}
+        >
+          Start exploring →
+        </button>
+
+        <button
+          onClick={() => { setMode('landing'); setStep(1); setName('') }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#3a3a3a',
+            fontFamily: 'DM Sans, sans-serif', fontSize: 14,
+            cursor: 'pointer',
+            textAlign: 'center'
+          }}
+        >
+          ← Back
+        </button>
       </div>
     )
   }
@@ -213,10 +328,21 @@ const Onboarding = () => {
           style={{
             marginTop: 20, background: 'none', border: 'none',
             fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#666666',
-            cursor: 'pointer', textAlign: 'center',
+            cursor: 'pointer', textAlign: 'center', width: '100%'
           }}
         >
           {mode === 'signin' ? "Don't have an account? Create one" : 'Already have an account? Sign in'}
+        </button>
+
+        <button
+          onClick={() => { setMode('guest'); setStep(3); setError('') }}
+          style={{
+            marginTop: 12, background: 'none', border: 'none',
+            fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#3a3a3a',
+            cursor: 'pointer', textAlign: 'center', width: '100%'
+          }}
+        >
+          Continue as Guest
         </button>
       </div>
     )
@@ -266,18 +392,24 @@ const Onboarding = () => {
         )}
 
         <div style={{ marginTop: 24, marginBottom: 24 }}>
-            <p className="section-label" style={{ marginBottom: 12 }}>Pick an avatar</p>
-            <AvatarEditor
-              user={{ name }}
-              onSave={(config) => { setAvatarConfig(config); setStep(4) }}
-              onClose={() => setStep(4)}
-              embedded
-            />
-          </div>
+          <p className="section-label" style={{ marginBottom: 12 }}>Pick an avatar</p>
+          <AvatarEditor
+            user={{ name }}
+            onSave={(config) => { setAvatarConfig(config); setStep(4) }}
+            onClose={() => setStep(4)}
+            embedded
+          />
+        </div>
 
         <button
-          onClick={handleSetName}
-          disabled={loading || !name || nameAvailable !== true}
+          onClick={() => {
+            if (mode === 'guest') {
+              setStep(4)
+            } else {
+              handleSetName()
+            }
+          }}
+          disabled={loading || !name || (mode !== 'guest' ? nameAvailable !== true : false)}
           className="btn-primary"
           style={{ marginTop: 'auto' }}
         >
