@@ -41,6 +41,18 @@ app.use('/api/nearby', nearbyRoutes)
 app.use('/api/notifications', notificationsRoutes)
 app.use('/api/venues', venuesRoutes)
 
+// The Sentry error handler must be registered before any other error middleware and after all controllers
+import * as Sentry from "@sentry/node";
+Sentry.setupExpressErrorHandler(app);
+
+// Optional fallthrough error handler
+app.use(function onError(err, req, res, next) {
+  // The error id is attached to `res.sentry` to be returned
+  // and optionally displayed to the user for support.
+  res.statusCode = 500;
+  res.end(res.sentry + "\n");
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), service: 'frens-backend' })

@@ -39,6 +39,7 @@ const ProtectedRoute = ({ children, authLoading }) => {
   )
 }
 
+
 function App() {
   const { user, setUser, toast, setToast, setUnreadCount, incrementUnread } = useStore()
   const [authLoading, setAuthLoading] = useState(true)

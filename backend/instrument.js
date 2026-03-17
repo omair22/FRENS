@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/node";
 // import { nodeProfilingIntegration } from "@sentry/profiling-node";
 
 Sentry.init({
-  dsn: "https://85ba519ef2d6a1ff227210a80edd05f3@o4511058522734592.ingest.us.sentry.io/4511058566709248",
+  dsn: "https://859e77faa04577bb44ca0c8ab267a1e9@o4511058522734592.ingest.us.sentry.io/4511058637619200",
   // Profiling is disabled because Sentry's native binary currently doesn't support Node 25.8.0
   // integrations: [
   //   nodeProfilingIntegration(),
