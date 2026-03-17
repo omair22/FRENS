@@ -6,35 +6,33 @@ import { supabase } from '../lib/supabase'
 import Avatar from '../components/Avatar'
 import AvatarEditor from '../components/AvatarEditor'
 
+const STATUS_OPTIONS = [
+  { id: 'free', label: "I'm Free", dot: '#4caf7d' },
+  { id: 'maybe', label: 'Maybe', dot: '#f5a623' },
+  { id: 'busy', label: 'Busy', dot: '#ff4d4d' },
+]
+
 const Profile = () => {
   const { user, setUser, setToast } = useStore()
   const navigate = useNavigate()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showEditor, setShowEditor] = useState(false)
+  const [activeTab, setActiveTab] = useState('hangouts')
 
-  const fetchProfileAndStats = async () => {
+  useEffect(() => {
+    Promise.all([getMyProfile(), getUserStats()])
+      .then(([p, s]) => { setUser(p.data); setStats(s.data) })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleStatusUpdate = async (s) => {
     try {
-      const [profileRes, statsRes] = await Promise.all([getMyProfile(), getUserStats()])
-      setUser(profileRes.data)
-      setStats(statsRes.data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { fetchProfileAndStats() }, [])
-
-  const handleStatusUpdate = async (newStatus) => {
-    try {
-      await updateStatus(newStatus)
-      setUser({ ...user, status: newStatus })
-      setToast({ message: `Status set to ${newStatus}!`, type: 'info' })
-    } catch (err) {
-      setToast({ message: 'Update failed', type: 'error' })
-    }
+      await updateStatus(s)
+      setUser({ ...user, status: s })
+      setToast({ message: 'Status updated', type: 'success' })
+    } catch { setToast({ message: 'Update failed', type: 'error' }) }
   }
 
   const handleSaveAvatar = async (config) => {
@@ -43,9 +41,7 @@ const Profile = () => {
       setUser({ ...user, avatar_config: config })
       setShowEditor(false)
       setToast({ message: 'Avatar updated', type: 'success' })
-    } catch (err) {
-      setToast({ message: 'Failed to save avatar', type: 'error' })
-    }
+    } catch { setToast({ message: 'Failed to save', type: 'error' }) }
   }
 
   const handleSignOut = async () => {
@@ -54,120 +50,218 @@ const Profile = () => {
     navigate('/onboarding')
   }
 
-  if (loading) return <div className="p-6 text-center pt-20 opacity-30">Loading profile...</div>
+  if (loading) return (
+    <div style={{ padding: '80px 20px', textAlign: 'center' }}>
+      <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#3a3a3a' }}>Loading</p>
+    </div>
+  )
+
+  const statItems = [
+    { label: 'Hangouts', value: stats?.hangoutsThisMonth || 0 },
+    { label: 'Frens', value: stats?.frensCount || 0 },
+    { label: 'Streak', value: stats?.streak || 0 },
+  ]
 
   return (
-    <div className="p-6 pb-32 max-w-md mx-auto space-y-10 animate-in fade-in duration-500 safe-top relative">
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', paddingBottom: 100 }}>
 
-      {/* Settings gear — top right */}
-      <button
-        onClick={() => navigate('/settings')}
-        className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-lg hover:bg-white/10 transition-colors z-10"
-      >
-        ⚙️
-      </button>
-
-      {/* Header */}
-      <div className="flex flex-col items-center text-center space-y-4">
-        {/* Tappable avatar with edit badge */}
-        <div className="relative">
-          <Avatar
-            name={user?.name}
-            config={user?.avatar_config || {}}
-            size={100}
-            status={user?.status}
-            onClick={() => setShowEditor(true)}
-            className="ring-4 ring-primary-red/30 cursor-pointer hover:ring-primary-red/60 transition-all"
-          />
-          <button
-            onClick={() => setShowEditor(true)}
-            className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center text-xs"
-            style={{ background: '#ff6b6b', border: '2px solid #0e0c14' }}
-          >
-            ✏️
-          </button>
-        </div>
-        <div>
-          <h1 className="text-3xl font-display font-black italic">{user?.name}</h1>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30 mt-1">{user?.email}</p>
-        </div>
-      </div>
-
-      {/* Status Picker */}
-      <div className="space-y-4">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30 text-center">Your Status</h3>
-        <div className="flex gap-2">
-          {[
-            { id: 'free', label: 'Down for anything', emoji: '🕺', color: 'bg-primary-green' },
-            { id: 'maybe', label: 'Convincable', emoji: '🤔', color: 'bg-primary-yellow' },
-            { id: 'busy', label: 'Doing things', emoji: '💼', color: 'bg-primary-red' },
-          ].map(s => (
+      {/* ── Header ── */}
+      <div style={{ padding: '56px 20px 20px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
+          {/* Avatar — tappable */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <Avatar
+              name={user?.name}
+              config={user?.avatar_config || {}}
+              size={72}
+              status={user?.status}
+              onClick={() => setShowEditor(true)}
+            />
             <button
-              key={s.id}
-              onClick={() => handleStatusUpdate(s.id)}
-              className={`flex-1 p-4 rounded-3xl flex flex-col items-center gap-2 transition-all duration-300 border ${user?.status === s.id ? `${s.color} text-background border-transparent scale-95 shadow-lg` : 'bg-card border-white/5 opacity-40 hover:opacity-100'}`}
+              onClick={() => setShowEditor(true)}
+              style={{
+                position: 'absolute', bottom: 0, right: 0,
+                width: 22, height: 22, borderRadius: '50%',
+                background: '#f5f5f5', border: '2px solid #0a0a0a',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', fontSize: 11,
+              }}
             >
-              <span className="text-2xl">{s.emoji}</span>
-              <span className="text-[8px] font-black uppercase tracking-tighter text-center leading-tight">{s.label}</span>
+              ✏
             </button>
-          ))}
+          </div>
+
+          {/* Name + email */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 800, color: '#f5f5f5', margin: '0 0 4px' }}>
+              {user?.name}
+            </h1>
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#666666', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user?.email}
+            </p>
+          </div>
         </div>
+
+        {/* Settings button */}
+        <button
+          onClick={() => navigate('/settings')}
+          style={{
+            width: 36, height: 36, borderRadius: 8,
+            background: '#111111',
+            border: '1px solid rgba(255,255,255,0.07)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: '#666666', fontSize: 16, flexShrink: 0,
+          }}
+        >
+          ⚙
+        </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="card-frens p-6 flex flex-col items-center gap-2">
-          <span className="text-3xl">🎉</span>
-          <span className="text-2xl font-display font-black italic">{stats?.hangoutsThisMonth || 0}</span>
-          <span className="text-[8px] font-black uppercase tracking-widest opacity-30">This Month</span>
-        </div>
-        <div className="card-frens p-6 flex flex-col items-center gap-2">
-          <span className="text-3xl">👥</span>
-          <span className="text-2xl font-display font-black italic">{stats?.frensCount || 0}</span>
-          <span className="text-[8px] font-black uppercase tracking-widest opacity-30">Total Frens</span>
-        </div>
-        <div className="card-frens p-6 flex flex-col items-center gap-2">
-          <span className="text-3xl">🔥</span>
-          <span className="text-2xl font-display font-black italic">{stats?.streak || 0}</span>
-          <span className="text-[8px] font-black uppercase tracking-widest opacity-30">Day Streak</span>
-        </div>
-        <div className="card-frens p-6 flex flex-col items-center gap-2">
-          <span className="text-3xl">🥉</span>
-          <span className="text-[8px] font-black uppercase tracking-widest opacity-30">Standing</span>
-          <span className="text-xs font-bold text-primary-yellow">INNER CIRCLE</span>
-        </div>
+      {/* ── Stats row ── */}
+      <div style={{
+        margin: '0 20px',
+        background: '#111111',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 12,
+        display: 'flex',
+      }}>
+        {statItems.map((s, i) => (
+          <div
+            key={s.label}
+            style={{
+              flex: 1, padding: '16px 0', textAlign: 'center',
+              borderRight: i < statItems.length - 1 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+            }}
+          >
+            <p style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 700, color: '#f5f5f5', margin: '0 0 4px' }}>
+              {s.value}
+            </p>
+            <p className="section-label" style={{ margin: 0 }}>{s.label}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Top Frens */}
-      <div className="space-y-4">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30 px-1">Top Frens</h3>
-        <div className="space-y-2">
-          {stats?.topFrens?.map((f, i) => (
-            <div key={i} className="flex items-center justify-between p-4 glass rounded-[1.5rem]">
-              <div className="flex items-center gap-3">
-                <span className={`text-sm font-black ${i === 0 ? 'text-primary-yellow' : i === 1 ? 'text-white/40' : 'text-primary-red/40'}`}>
-                  #{i + 1}
+      {/* ── Status picker ── */}
+      <div style={{ margin: '24px 20px 0' }}>
+        <p className="section-label" style={{ marginBottom: 12 }}>Status</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {STATUS_OPTIONS.map(s => {
+            const isActive = user?.status === s.id
+            return (
+              <button
+                key={s.id}
+                onClick={() => handleStatusUpdate(s.id)}
+                style={{
+                  flex: 1, height: 44, borderRadius: 8,
+                  background: isActive ? '#1a1a1a' : 'transparent',
+                  border: isActive ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.07)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  cursor: 'pointer',
+                  transition: 'transform 0.1s ease',
+                }}
+                onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+                onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.dot }} />
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: isActive ? '#f5f5f5' : '#666666' }}>
+                  {s.label}
                 </span>
-                <Avatar name={f.name} config={f.avatar_config || {}} size={32} />
-                <span className="font-display font-bold">{f.name}</span>
-              </div>
-              <span className="text-[10px] font-black uppercase opacity-30">{f.count} hangouts</span>
-            </div>
-          ))}
+              </button>
+            )
+          })}
         </div>
       </div>
 
-      <button onClick={handleSignOut} className="w-full card-frens p-6 border-primary-red/20 opacity-40 hover:opacity-100 hover:border-primary-red/50 transition-all font-display font-black italic">
-        SIGN OUT
-      </button>
+      {/* ── Tab bar ── */}
+      <div style={{
+        margin: '24px 20px 0',
+        display: 'flex',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+      }}>
+        {['hangouts', 'frens', 'stats'].map(tab => {
+          const isActive = activeTab === tab
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                flex: 1, height: 44,
+                background: 'none', border: 'none',
+                borderBottom: isActive ? '2px solid #f5f5f5' : '2px solid transparent',
+                marginBottom: -1,
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: 14, fontWeight: 500,
+                color: isActive ? '#f5f5f5' : '#3a3a3a',
+                cursor: 'pointer',
+                textTransform: 'capitalize',
+              }}
+            >
+              {tab}
+            </button>
+          )
+        })}
+      </div>
 
-      {/* Avatar Editor Modal */}
+      {/* ── Tab content ── */}
+      <div style={{ padding: '16px 20px' }}>
+        {activeTab === 'frens' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {stats?.topFrens?.length > 0 ? stats.topFrens.map((f, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '12px 16px',
+                  background: '#111111',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  borderRadius: 12,
+                }}
+              >
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#3a3a3a', width: 20 }}>#{i + 1}</span>
+                <Avatar name={f.name} config={f.avatar_config || {}} size={32} />
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500, color: '#f5f5f5', flex: 1 }}>{f.name}</span>
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#3a3a3a' }}>{f.count} hangouts</span>
+              </div>
+            )) : (
+              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#3a3a3a', textAlign: 'center', padding: '32px 0' }}>No frens yet</p>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'stats' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            {[
+              { label: 'This Month', value: stats?.hangoutsThisMonth || 0 },
+              { label: 'Total Frens', value: stats?.frensCount || 0 },
+              { label: 'Day Streak', value: stats?.streak || 0 },
+              { label: 'Rank', value: 'Inner Circle' },
+            ].map(s => (
+              <div key={s.label} style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 16 }}>
+                <p style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 700, color: '#f5f5f5', margin: '0 0 4px' }}>
+                  {s.value}
+                </p>
+                <p className="section-label" style={{ margin: 0 }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'hangouts' && (
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#3a3a3a', textAlign: 'center', padding: '32px 0' }}>
+            Hangout history coming soon
+          </p>
+        )}
+      </div>
+
+      {/* ── Sign out ── */}
+      <div style={{ padding: '0 20px' }}>
+        <button onClick={handleSignOut} className="btn-destructive" style={{ width: '100%' }}>
+          Sign Out
+        </button>
+      </div>
+
       {showEditor && (
-        <AvatarEditor
-          user={user}
-          onSave={handleSaveAvatar}
-          onClose={() => setShowEditor(false)}
-        />
+        <AvatarEditor user={user} onSave={handleSaveAvatar} onClose={() => setShowEditor(false)} />
       )}
     </div>
   )

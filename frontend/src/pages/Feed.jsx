@@ -5,10 +5,17 @@ import { useStore } from '../store/useStore'
 import HangoutCard from '../components/HangoutCard'
 import FrenBubble from '../components/FrenBubble'
 import { FeedSkeleton } from '../components/Skeleton'
-import Toast from '../components/Toast'
+
+const FILTERS = ['All', 'Today', 'This Week']
+
+const BellIcon = () => (
+  <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+    <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+)
 
 const Feed = () => {
-  const { user, hangouts, frens, toast, unreadCount, setHangouts, setFrens, setToast } = useStore()
+  const { user, hangouts, frens, unreadCount, setHangouts, setFrens, setToast } = useStore()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -16,9 +23,7 @@ const Feed = () => {
   const [showAvailSheet, setShowAvailSheet] = useState(false)
   const [selectedDay, setSelectedDay] = useState(null)
   const [showPast, setShowPast] = useState(false)
-
-  const activeHangouts = hangouts.filter(h => h.status !== 'archived')
-  const archivedHangouts = hangouts.filter(h => h.status === 'archived')
+  const [activeFilter, setActiveFilter] = useState('All')
 
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date()
@@ -26,47 +31,57 @@ const Feed = () => {
     return d
   })
 
+  const firstName = user?.name?.split(' ')[0] || 'there'
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+
+  const activeHangouts = hangouts.filter(h => {
+    if (h.status === 'archived') return false
+    if (activeFilter === 'Today') {
+      return h.datetime && new Date(h.datetime).toDateString() === new Date().toDateString()
+    }
+    if (activeFilter === 'This Week') {
+      const end = new Date()
+      end.setDate(end.getDate() + 7)
+      return h.datetime && new Date(h.datetime) <= end
+    }
+    return true
+  })
+  const archivedHangouts = hangouts.filter(h => h.status === 'archived')
+
   const fetchData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true)
     else setLoading(true)
-
     try {
       const [hangoutsRes, frensRes, aiRes] = await Promise.all([
         getHangouts(),
         getFrends(),
         getSuggest().catch(() => ({ data: null }))
       ])
-
       setHangouts(hangoutsRes.data)
       setFrens(frensRes.data)
       if (aiRes.data) setAiSuggestion(aiRes.data)
-    } catch (err) {
-      console.error('Feed fetch error:', err)
-      setToast({ message: 'Failed to sync data 💨', type: 'error' })
+    } catch {
+      setToast({ message: 'Failed to load feed', type: 'error' })
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
   }, [setHangouts, setFrens, setToast])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  useEffect(() => { fetchData() }, [fetchData])
 
   const handleRsvp = async (id, response) => {
     try {
-      const updatedHangouts = hangouts.map(h => {
-        if (h.id === id) {
-          const others = h.rsvps.filter(r => r.user_id !== user.id)
-          return { ...h, rsvps: [...others, { user_id: user.id, response, user }] }
-        }
-        return h
+      const updated = hangouts.map(h => {
+        if (h.id !== id) return h
+        const others = h.rsvps.filter(r => r.user_id !== user.id)
+        return { ...h, rsvps: [...others, { user_id: user.id, response, user }] }
       })
-      setHangouts(updatedHangouts)
+      setHangouts(updated)
       await rsvpHangout(id, response)
-      setToast({ message: 'RSVP saved ✅', type: 'success' })
-    } catch (err) {
-      setToast({ message: 'RSVP failed ❌', type: 'error' })
+    } catch {
+      setToast({ message: 'RSVP failed', type: 'error' })
       fetchData()
     }
   }
@@ -74,196 +89,273 @@ const Feed = () => {
   const handleSetAvail = async (status) => {
     try {
       await setAvailability(selectedDay.toISOString().split('T')[0], status)
-      setToast({ message: 'Availability updated! 🎉', type: 'success' })
+      setToast({ message: 'Updated', type: 'success' })
       setShowAvailSheet(false)
       fetchData(true)
-    } catch (err) {
-      setToast({ message: 'Update failed ❌', type: 'error' })
+    } catch {
+      setToast({ message: 'Update failed', type: 'error' })
     }
   }
 
   if (loading && !refreshing) return <FeedSkeleton />
 
   return (
-    <div className="min-h-screen bg-background pb-32 safe-top relative">
-      {/* Header */}
-      <div className="px-6 py-6 flex justify-between items-center">
-        <h1 className="text-4xl font-display font-black italic text-gradient-red-yellow">FRENS</h1>
-        <button
-          onClick={() => navigate('/notifications')}
-          className="relative w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
-        >
-          🔔
-          {unreadCount > 0 && (
-            <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-black text-white px-1"
-              style={{ background: '#ff6b6b', boxShadow: '0 0 8px rgba(255,107,107,0.5)' }}>
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </div>
-          )}
-        </button>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', paddingBottom: 96 }}>
+
+      {/* ── Header ── */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 30,
+        background: '#0a0a0a',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        padding: '16px 20px 12px',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 700, color: '#f5f5f5', margin: 0 }}>
+            {greeting}, {firstName}
+          </h1>
+          <button
+            onClick={() => navigate('/notifications')}
+            style={{
+              width: 40, height: 40, borderRadius: '50%',
+              background: '#111111',
+              border: '1px solid rgba(255,255,255,0.07)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: unreadCount > 0 ? '#f5f5f5' : '#666666',
+              cursor: 'pointer',
+              position: 'relative',
+            }}
+          >
+            <BellIcon />
+            {unreadCount > 0 && (
+              <div style={{
+                position: 'absolute', top: 2, right: 2,
+                width: 8, height: 8, borderRadius: '50%',
+                background: '#ff4d4d', border: '2px solid #0a0a0a',
+              }} />
+            )}
+          </button>
+        </div>
+
+        {/* Filter pills */}
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {FILTERS.map(f => (
+            <button
+              key={f}
+              onClick={() => setActiveFilter(f)}
+              className={`pill ${activeFilter === f ? 'pill-active' : 'pill-inactive'}`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="space-y-8 animate-in fade-in duration-700">
-        {/* Availability Strip */}
-        <div className="space-y-4">
-          <h3 className="px-6 text-[10px] font-black uppercase tracking-[0.2em] opacity-30">Your Week</h3>
-          <div className="flex gap-3 overflow-x-auto px-6 no-scrollbar pb-2">
-            {days.map((date, i) => (
-              <button
-                key={i}
-                onClick={() => { setSelectedDay(date); setShowAvailSheet(true); }}
-                className="flex-shrink-0 w-12 h-20 bg-card rounded-2xl flex flex-col items-center justify-center gap-2 border border-white/5 active:scale-95 transition-all"
-              >
-                <span className="text-[8px] font-black opacity-30 uppercase">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                <span className="font-display font-bold text-lg">{date.getDate()}</span>
-                <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
-              </button>
-            ))}
+      <div style={{ padding: '0 20px' }}>
+
+        {/* ── Availability Strip ── */}
+        <div style={{ marginTop: 24, marginBottom: 24 }}>
+          <p className="section-label" style={{ marginBottom: 12 }}>Your Week</p>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', margin: '0 -20px', padding: '0 20px' }}>
+            {days.map((date, i) => {
+              const isToday = i === 0
+              return (
+                <button
+                  key={i}
+                  onClick={() => { setSelectedDay(date); setShowAvailSheet(true) }}
+                  style={{
+                    flexShrink: 0,
+                    width: 52,
+                    height: 72,
+                    borderRadius: 12,
+                    background: isToday ? '#1a1a1a' : '#111111',
+                    border: isToday ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.07)',
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center', gap: 4,
+                    cursor: 'pointer',
+                    transition: 'transform 0.1s ease',
+                  }}
+                  onMouseDown={e => e.currentTarget.style.transform = 'scale(0.96)'}
+                  onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, fontWeight: 500, color: '#3a3a3a' }}>
+                    {date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()}
+                  </span>
+                  <span style={{
+                    fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 700,
+                    color: isToday ? '#f5f5f5' : '#666666',
+                  }}>
+                    {date.getDate()}
+                  </span>
+                  <div style={{
+                    width: 4, height: 4, borderRadius: '50%',
+                    background: isToday ? '#f5f5f5' : 'rgba(255,255,255,0.1)',
+                  }} />
+                </button>
+              )
+            })}
           </div>
         </div>
 
-        {/* AI Suggestion Banner */}
-        {aiSuggestion && (
-          <div className="px-6">
-            <div className="relative glass p-6 rounded-[2rem] overflow-hidden group border-primary-purple/20">
-              <div className="absolute top-0 right-0 p-4 opacity-10 text-6xl rotate-12 group-hover:rotate-0 transition-transform">🤖</div>
-              <div className="relative z-10 flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary-purple rounded-full animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary-purple">AI Scheduler Suggestion</span>
-                </div>
-                <h2 className="text-lg font-display font-black leading-tight normal-case italic line-clamp-2">
-                  "{aiSuggestion.reason}"
-                </h2>
-                <div className="mt-2 flex gap-2">
-                  <button className="bg-primary-purple text-background px-4 py-1.5 rounded-full text-[10px] font-black uppercase active:scale-95 transition-transform">
-                    Plan Now
-                  </button>
-                  <button onClick={() => setAiSuggestion(null)} className="text-white/30 px-2 py-1.5 rounded-full text-[10px] font-black uppercase">
-                    Dismiss
-                  </button>
-                </div>
-              </div>
+        {/* ── Fren Status Strip ── */}
+        {frens.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <p className="section-label" style={{ marginBottom: 12 }}>Who's Around</p>
+            <div style={{ display: 'flex', gap: 16, overflowX: 'auto', scrollbarWidth: 'none', margin: '0 -20px', padding: '0 20px 4px' }}>
+              <FrenBubble fren={{ ...user, name: 'You' }} onClick={() => navigate('/profile')} />
+              {frens.map(f => (
+                <FrenBubble key={f.id} fren={f} onClick={() => navigate(`/profile/${f.id}`)} />
+              ))}
             </div>
           </div>
         )}
 
-        {/* Who's Free Now Bubbles */}
-        <div className="space-y-4">
-          <h3 className="px-6 text-[10px] font-black uppercase tracking-[0.2em] opacity-30">Who's Free Now</h3>
-          <div className="flex gap-4 overflow-x-auto px-6 no-scrollbar pb-2">
-            <FrenBubble fren={{ ...user, name: 'You', status: user.status }} onClick={() => navigate('/profile')} />
-            {frens.map(fren => (
-              <FrenBubble key={fren.id} fren={fren} onClick={() => navigate(`/profile/${fren.id}`)} />
-            ))}
+        {/* ── AI Suggestion ── */}
+        {aiSuggestion && (
+          <div style={{ marginBottom: 24 }}>
+            <div
+              style={{
+                background: '#111111',
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 12,
+                padding: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                cursor: 'pointer',
+              }}
+              onClick={() => navigate('/new')}
+            >
+              <span style={{ fontSize: 16, flexShrink: 0 }}>✦</span>
+              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#666666', margin: 0, flex: 1, lineHeight: 1.4 }}>
+                {aiSuggestion.reason}
+              </p>
+              <span style={{ color: '#3a3a3a', fontSize: 18, flexShrink: 0 }}>→</span>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Hangouts List */}
-        <div className="px-6 space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-30">The Vibe Check</h3>
-            <button onClick={() => fetchData(true)} className={`text-[10px] font-black uppercase tracking-widest opacity-30 ${refreshing ? 'animate-spin' : ''}`}>
-              {refreshing ? 'Syncing...' : 'Pull to Refresh'}
+        {/* ── Hangouts ── */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <p className="section-label">
+              {activeFilter === 'All' ? 'Upcoming' : activeFilter}
+            </p>
+            <button
+              onClick={() => fetchData(true)}
+              style={{
+                fontFamily: 'DM Sans, sans-serif', fontSize: 12,
+                color: '#3a3a3a', background: 'none', border: 'none', cursor: 'pointer',
+              }}
+            >
+              {refreshing ? '...' : 'Refresh'}
             </button>
           </div>
 
-          <div className="space-y-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {activeHangouts.map(h => (
               <HangoutCard key={h.id} hangout={h} onRsvp={handleRsvp} currentUserId={user?.id} />
             ))}
 
             {activeHangouts.length === 0 && (
-              <div className="text-center py-20 bg-card rounded-[3rem] border border-white/5 border-dashed space-y-4">
-                <span className="text-5xl block animate-bounce">💨</span>
-                <div className="space-y-1">
-                  <p className="font-display font-black normal-case text-xl italic">Nothing planned yet 👀</p>
-                  <p className="text-sm opacity-30">Drop a vibe for the crew to coordinate.</p>
-                </div>
+              <div style={{
+                textAlign: 'center', padding: '48px 20px',
+                border: '1px dashed rgba(255,255,255,0.07)',
+                borderRadius: 12,
+              }}>
+                <p style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 700, color: '#f5f5f5', marginBottom: 8 }}>
+                  Nothing planned
+                </p>
+                <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#666666', marginBottom: 24 }}>
+                  Drop a vibe for the crew.
+                </p>
                 <button
                   onClick={() => navigate('/new')}
-                  className="bg-primary-red text-background px-6 py-2 rounded-full text-[10px] font-black uppercase shadow-lg shadow-primary-red/20 active:scale-95 transition-transform"
+                  className="btn-primary"
+                  style={{ width: 'auto', padding: '0 24px', display: 'inline-flex' }}
                 >
-                  Plan Something +
+                  Plan something
                 </button>
-              </div>
-            )}
-
-            {/* Past hangouts — collapsible */}
-            {archivedHangouts.length > 0 && (
-              <div className="mt-6">
-                <button
-                  onClick={() => setShowPast(!showPast)}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-2xl mb-3"
-                  style={{ background: '#16131f', border: '1px solid rgba(255,255,255,0.07)' }}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg">📦</span>
-                    <div className="text-left">
-                      <p className="text-sm font-bold text-white/50">Past Hangouts</p>
-                      <p className="text-[10px] text-white/25 mt-0.5">
-                        {archivedHangouts.length} wrapped up
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-white/25 transition-transform duration-200"
-                    style={{ transform: showPast ? 'rotate(180deg)' : 'rotate(0)' }}>
-                    ›
-                  </span>
-                </button>
-
-                {showPast && (
-                  <div className="space-y-3 animate-in slide-in-from-top-2 duration-200">
-                    {archivedHangouts.map(h => (
-                      <HangoutCard
-                        key={h.id}
-                        hangout={h}
-                        onRsvp={handleRsvp}
-                        currentUserId={user?.id}
-                        archived
-                      />
-                    ))}
-                  </div>
-                )}
               </div>
             )}
           </div>
+
+          {/* Past hangouts */}
+          {archivedHangouts.length > 0 && (
+            <div style={{ marginTop: 24 }}>
+              <button
+                onClick={() => setShowPast(!showPast)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: '#111111',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  borderRadius: 12,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  cursor: 'pointer',
+                }}
+              >
+                <p className="section-label" style={{ margin: 0 }}>Archived · {archivedHangouts.length}</p>
+                <span style={{ color: '#3a3a3a', transform: showPast ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s ease' }}>›</span>
+              </button>
+              {showPast && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                  {archivedHangouts.map(h => (
+                    <HangoutCard key={h.id} hangout={h} onRsvp={handleRsvp} currentUserId={user?.id} archived />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Availability Bottom Sheet */}
+      {/* ── Availability Sheet ── */}
       {showAvailSheet && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="w-full max-w-md bg-card rounded-t-[3rem] p-8 space-y-8 animate-in slide-in-from-bottom-full duration-500">
-            <div className="space-y-2 text-center">
-              <h2 className="text-2xl font-display font-black italic">Set Availability</h2>
-              <p className="text-[10px] font-black uppercase opacity-30 tracking-widest">
-                {selectedDay?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-              </p>
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+          onClick={e => e.target === e.currentTarget && setShowAvailSheet(false)}
+        >
+          <div style={{ width: '100%', maxWidth: 448, background: '#111111', borderRadius: '20px 20px 0 0', padding: '0 20px 32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0' }}>
+              <div style={{ width: 32, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.1)' }} />
             </div>
-
-            <div className="grid grid-cols-1 gap-3">
+            <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 700, color: '#f5f5f5', marginBottom: 4 }}>
+              Set Availability
+            </h2>
+            <p className="section-label" style={{ marginBottom: 24 }}>
+              {selectedDay?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
               {[
-                { id: 'free', label: "I'm Free / Down", emoji: '🕺', color: 'bg-primary-green' },
-                { id: 'maybe', label: 'Maybe / Depends', emoji: '🤔', color: 'bg-primary-yellow' },
-                { id: 'busy', label: 'Busy / Locked in', emoji: '🔒', color: 'bg-primary-red' }
+                { id: 'free', label: "I'm Free", sublabel: 'Down for anything', dot: '#4caf7d' },
+                { id: 'maybe', label: 'Maybe', sublabel: 'Depends on the plan', dot: '#f5a623' },
+                { id: 'busy', label: 'Busy', sublabel: 'Not available', dot: '#ff4d4d' },
               ].map(s => (
                 <button
                   key={s.id}
                   onClick={() => handleSetAvail(s.id)}
-                  className={`flex items-center gap-4 p-5 rounded-[2rem] border border-white/5 glass transition-all active:scale-[0.98] group`}
+                  style={{
+                    padding: '14px 16px',
+                    background: '#1a1a1a',
+                    border: '1px solid rgba(255,255,255,0.07)',
+                    borderRadius: 12,
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    cursor: 'pointer',
+                    transition: 'transform 0.1s ease',
+                    textAlign: 'left',
+                  }}
+                  onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+                  onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
                 >
-                  <span className="text-3xl">{s.emoji}</span>
-                  <span className="flex-1 text-left font-display font-bold">{s.label}</span>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${s.color} text-background`}>→</div>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.dot, flexShrink: 0 }} />
+                  <div>
+                    <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600, color: '#f5f5f5', margin: 0 }}>{s.label}</p>
+                    <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#666666', margin: 0 }}>{s.sublabel}</p>
+                  </div>
                 </button>
               ))}
             </div>
-
-            <button
-              onClick={() => setShowAvailSheet(false)}
-              className="w-full text-[10px] font-black uppercase tracking-[0.2em] opacity-30 py-4"
-            >
+            <button onClick={() => setShowAvailSheet(false)} style={{ width: '100%', padding: 12, background: 'none', border: 'none', color: '#3a3a3a', fontFamily: 'DM Sans, sans-serif', fontSize: 14, cursor: 'pointer' }}>
               Cancel
             </button>
           </div>

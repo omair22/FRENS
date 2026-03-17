@@ -8,14 +8,14 @@ import NearbyMap from '../components/NearbyMap'
 
 const statusColor = (status) => {
   const map = {
-    free: '#6bcb77',
-    busy: '#ff6b6b',
-    maybe: '#ffd93d',
-    ghost: '#c77dff',
-    inv: '#666',
-    offline: '#444'
+    free: '#4caf7d',
+    busy: '#ff4d4d',
+    maybe: '#f5a623',
+    ghost: '#9b7fff',
+    inv: '#3a3a3a',
+    offline: '#3a3a3a'
   }
-  return map[status] || '#444'
+  return map[status] || '#3a3a3a'
 }
 
 const Nearby = () => {
@@ -170,53 +170,51 @@ const Nearby = () => {
   }
 
   return (
-    <div className="min-h-screen pb-32 max-w-md mx-auto flex flex-col pt-safe bg-background">
+    <div style={{ minHeight: '100vh', paddingBottom: 120, maxWidth: 448, margin: '0 auto', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-12 pb-3">
-        <h1 className="font-display font-black text-2xl pl-1">Nearby</h1>
-        {/* Own status indicator — tap to change */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '56px 20px 12px' }}>
+        <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 700, color: '#f5f5f5', margin: 0 }}>Nearby</h1>
         <button
           onClick={() => setShowStatusPicker(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full"
-          style={{ background: '#16131f', border: '1px solid rgba(255,255,255,0.08)' }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '6px 14px', borderRadius: 9999,
+            background: '#111111', border: '1px solid rgba(255,255,255,0.07)',
+            cursor: 'pointer',
+          }}
         >
-          <div className="w-2 h-2 rounded-full"
-            style={{ background: statusColor(currentUser?.status) }} />
-          <span className="text-xs font-bold text-white/60 capitalize">
-            {currentUser?.status === 'inv' ? 'invisible' : currentUser?.status || 'offline'}
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: statusColor(currentUser?.status) }} />
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#666666', textTransform: 'capitalize' }}>
+            {currentUser?.status === 'inv' ? 'Invisible' : currentUser?.status || 'Offline'}
           </span>
         </button>
       </div>
 
       {/* Mode toggle */}
-      <div className="flex justify-center mb-3 px-5">
-        <div className="flex p-1 rounded-2xl w-full"
-          style={{ background: '#16131f', border: '1px solid rgba(255,255,255,0.07)' }}>
+      <div style={{ padding: '0 20px 12px', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', width: '100%', background: '#111111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 4 }}>
           {['frens', 'places'].map(m => (
             <button
               key={m}
-              onClick={() => {
-                setMode(m)
-                // Clear selections when switching
-                setSelectedVenue(null)
-                setSelectedFren(null)
-                setShowPingFlow(false)
-              }}
-              className="flex-1 py-2 rounded-xl text-sm font-black capitalize transition-all"
+              onClick={() => { setMode(m); setSelectedVenue(null); setSelectedFren(null); setShowPingFlow(false) }}
               style={{
-                background: mode === m ? '#ff6b6b' : 'transparent',
-                color: mode === m ? '#fff' : 'rgba(255,255,255,0.35)',
-                boxShadow: mode === m ? '0 4px 12px rgba(255,107,107,0.3)' : 'none'
+                flex: 1, height: 36, borderRadius: 8,
+                background: mode === m ? '#f5f5f5' : 'transparent',
+                color: mode === m ? '#0a0a0a' : '#666666',
+                border: 'none',
+                fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', textTransform: 'capitalize',
+                transition: 'background 0.15s ease',
               }}
             >
-              {m === 'frens' ? '👥 Frens' : '📍 Places'}
+              {m === 'frens' ? 'Frens' : 'Places'}
             </button>
           ))}
         </div>
       </div>
 
       {/* Map */}
-      <div className="relative mx-4 rounded-3xl overflow-hidden shadow-2xl z-0" style={{ height: '52vh' }}>
+      <div style={{ position: 'relative', margin: '0 20px', borderRadius: 12, overflow: 'hidden', height: '50vh' }}>
         <NearbyMap
           frens={mode === 'frens' ? frens : []}
           venues={mode === 'places' ? venues : []}
@@ -232,10 +230,10 @@ const Nearby = () => {
         {/* Ghost mode banner — only in frens mode, if active */}
         {mode === 'frens' && currentUser?.status === 'ghost' && (
           <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 px-3 py-2 rounded-2xl pointer-events-none z-10"
-            style={{ background: 'rgba(199,125,255,0.12)', border: '1px solid rgba(199,125,255,0.2)', backdropFilter: 'blur(8px)' }}>
-            <span className="text-sm">👻</span>
-            <p className="text-xs font-bold" style={{ color: '#c77dff' }}>
-              Ghost mode — you're hidden, frens are visible
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)' }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#9b7fff' }} />
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 600, color: '#f5f5f5', margin: 0 }}>
+              Ghost mode — you're invisible on the map
             </p>
           </div>
         )}
@@ -243,42 +241,30 @@ const Nearby = () => {
 
       {/* Bottom panel — FRENS mode */}
       {mode === 'frens' && (
-        <div className="px-4 mt-6">
+        <div style={{ padding: '20px 20px 0' }}>
           {loading ? (
-            <div className="text-center py-6">
-              <p className="text-sm font-bold text-white/30">Scanning...</p>
-            </div>
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#3a3a3a', textAlign: 'center', padding: '16px 0' }}>Scanning...</p>
           ) : frens.length === 0 ? (
-            <div className="text-center py-6">
-              <p className="text-sm font-bold text-white/30">No frens nearby</p>
-              <p className="text-xs text-white/20 mt-1">They need location sharing on</p>
+            <div style={{ textAlign: 'center', padding: '16px 0' }}>
+              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#3a3a3a', margin: '0 0 4px' }}>No frens nearby</p>
+              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#3a3a3a' }}>They need location sharing on</p>
             </div>
           ) : (
             <>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25 mb-3 pl-1">
+              <p className="section-label" style={{ marginBottom: 12 }}>
                 {frens.length} fren{frens.length > 1 ? 's' : ''} nearby
               </p>
-              <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar px-1">
+              <div style={{ display: 'flex', gap: 16, overflowX: 'auto', scrollbarWidth: 'none', margin: '0 -20px', padding: '0 20px 8px' }}>
                 {frens.map(fren => (
                   <button
                     key={fren.id}
-                    onClick={() => {
-                      setSelectedFren(fren)
-                      setShowPingFlow(true)
-                    }}
-                    className="flex flex-col items-center gap-2 flex-shrink-0 transition-all active:scale-95"
+                    onClick={() => { setSelectedFren(fren); setShowPingFlow(true) }}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer' }}
                   >
-                    <div className="relative hover:scale-105 active:scale-95 transition-transform">
-                      <Avatar
-                        name={fren.name}
-                        config={fren.avatar_config || {}}
-                        size={56}
-                        status={fren.status}
-                      />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs font-bold text-white/80">{fren.name.split(' ')[0]}</p>
-                      <p className="text-[10px] text-white/30 mt-0.5">{fren.distance}</p>
+                    <Avatar name={fren.name} config={fren.avatar_config || {}} size={44} status={fren.status} />
+                    <div style={{ textAlign: 'center' }}>
+                      <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, fontWeight: 500, color: '#f5f5f5', margin: 0 }}>{fren.name.split(' ')[0]}</p>
+                      <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#666666', margin: 0 }}>{fren.distance}</p>
                     </div>
                   </button>
                 ))}
@@ -290,73 +276,60 @@ const Nearby = () => {
 
       {/* Bottom panel — PLACES mode */}
       {mode === 'places' && (
-        <div className="px-4 mt-6">
-          {/* Category chips */}
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-3">
+        <div style={{ padding: '20px 20px 0' }}>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', margin: '0 -20px', padding: '0 20px 12px' }}>
             {[
-              { key: 'all', label: 'All', emoji: '🗺️' },
-              { key: 'food', label: 'Food', emoji: '🍽️' },
-              { key: 'coffee', label: 'Coffee', emoji: '☕' },
-              { key: 'drinks', label: 'Drinks', emoji: '🍺' },
-              { key: 'parks', label: 'Outside', emoji: '🌳' },
+              { key: 'all', label: 'All' },
+              { key: 'food', label: 'Food' },
+              { key: 'coffee', label: 'Coffee' },
+              { key: 'drinks', label: 'Drinks' },
+              { key: 'parks', label: 'Outside' },
             ].map(cat => (
               <button
                 key={cat.key}
                 onClick={() => setVenueCategory(cat.key)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all flex-shrink-0 whitespace-nowrap"
-                style={{
-                  background: venueCategory === cat.key ? 'rgba(255,107,107,0.15)' : 'rgba(255,255,255,0.04)',
-                  borderColor: venueCategory === cat.key ? 'rgba(255,107,107,0.4)' : 'rgba(255,255,255,0.07)',
-                  color: venueCategory === cat.key ? '#ff6b6b' : 'rgba(255,255,255,0.35)'
-                }}
+                className={`pill ${venueCategory === cat.key ? 'pill-active' : 'pill-inactive'}`}
               >
-                {cat.emoji} {cat.label}
+                {cat.label}
               </button>
             ))}
           </div>
 
-          {/* Venue list */}
           {venuesLoading ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-16 rounded-2xl animate-pulse" style={{ background: '#16131f' }} />
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 64, borderRadius: 12 }} />)}
             </div>
           ) : venues.length === 0 ? (
-            <div className="text-center py-6">
-              <p className="text-sm font-bold text-white/30">No places found nearby</p>
-            </div>
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#3a3a3a', textAlign: 'center', padding: '16px 0' }}>No places found nearby</p>
           ) : (
-            <div className="space-y-2 overflow-y-auto no-scrollbar" style={{ maxHeight: '28vh' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '30vh', overflowY: 'auto', scrollbarWidth: 'none' }}>
               {venues.map(venue => (
                 <button
                   key={venue.id}
                   onClick={() => setSelectedVenue(venue)}
-                  className="w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all active:scale-[0.98]"
                   style={{
-                    background: selectedVenue?.id === venue.id ? 'rgba(255,107,107,0.1)' : '#16131f',
-                    border: selectedVenue?.id === venue.id ? '1px solid rgba(255,107,107,0.3)' : '1px solid rgba(255,255,255,0.07)'
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: 12, borderRadius: 12, textAlign: 'left',
+                    background: selectedVenue?.id === venue.id ? '#1a1a1a' : '#111111',
+                    border: selectedVenue?.id === venue.id ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.07)',
+                    cursor: 'pointer', width: '100%',
                   }}
                 >
-                  <div className="w-11 h-11 rounded-2xl flex-shrink-0 overflow-hidden flex items-center justify-center text-xl"
-                    style={{ background: '#1d1928' }}>
-                    {venue.photo ? <img src={venue.photo} alt="" className="w-full h-full object-cover" /> : venue.icon}
+                  <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, overflow: 'hidden' }}>
+                    {venue.photo ? <img src={venue.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : venue.icon}
                   </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold truncate">{venue.name}</p>
-                      {venue.isOpen === true && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#6bcb77' }} />}
-                      {venue.isOpen === false && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#ff6b6b' }} />}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600, color: '#f5f5f5', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{venue.name}</p>
+                      {venue.isOpen === true && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#4caf7d', flexShrink: 0 }} />}
+                      {venue.isOpen === false && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff4d4d', flexShrink: 0 }} />}
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {venue.rating && <span className="text-[11px] text-white/40">★ {venue.rating}</span>}
-                      {venue.priceLevel > 0 && <span className="text-[11px] text-white/25">{'£'.repeat(venue.priceLevel)}</span>}
-                      <span className="text-[11px] text-white/25 truncate">{venue.address?.split(',')[0]}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                      {venue.rating && <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#666666' }}>★ {venue.rating}</span>}
+                      <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#3a3a3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{venue.address?.split(',')[0]}</span>
                     </div>
                   </div>
-
-                  <span className="text-white/20 text-sm flex-shrink-0">›</span>
+                  <span style={{ color: '#3a3a3a', fontSize: 16, flexShrink: 0 }}>›</span>
                 </button>
               ))}
             </div>
@@ -366,18 +339,22 @@ const Nearby = () => {
 
       {/* Ping Flow Bottom Sheet */}
       {showPingFlow && selectedFren && (
-        <BottomSheet onClose={() => { setShowPingFlow(false); setSelectedFren(null) }} title="">
-          <div className="flex items-center gap-4 mb-6">
+        <BottomSheet isOpen={true} onClose={() => { setShowPingFlow(false); setSelectedFren(null) }} title="">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
             <Avatar name={selectedFren.name} config={selectedFren.avatar_config || {}} size={64} status={selectedFren.status} />
             <div>
-              <h2 className="font-display font-black text-2xl">{selectedFren.name.split(' ')[0]}</h2>
-              <p className="text-sm text-white/40 mt-0.5">{selectedFren.distance} away</p>
+              <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 24, fontWeight: 700, color: '#f5f5f5', margin: 0 }}>
+                {selectedFren.name.split(' ')[0]}
+              </h2>
+              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#666666', marginTop: 2 }}>
+                {selectedFren.distance} away
+              </p>
             </div>
           </div>
 
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-3 ml-1">Meet when?</p>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 600, color: '#3a3a3a', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Meet when?</p>
 
-          <div className="flex flex-wrap gap-2 mb-5">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
             {[
               { label: 'Just ping', value: null },
               { label: 'Now', value: 0 },
@@ -391,12 +368,13 @@ const Nearby = () => {
               <button
                 key={String(t.value)}
                 onClick={() => setPingTime(t.value)}
-                className="px-4 py-2 rounded-full text-sm font-bold border transition-all"
                 style={{
-                  background: pingTime === t.value ? 'rgba(255,107,107,0.15)' : 'rgba(255,255,255,0.04)',
-                  borderColor: pingTime === t.value ? 'rgba(255,107,107,0.5)' : 'rgba(255,255,255,0.08)',
-                  color: pingTime === t.value ? '#ff6b6b' : 'rgba(255,255,255,0.35)',
-                  boxShadow: pingTime === t.value ? '0 0 12px rgba(255,107,107,0.15)' : 'none'
+                  padding: '8px 16px', borderRadius: 9999,
+                  background: pingTime === t.value ? '#f5f5f5' : '#1a1a1a',
+                  color: pingTime === t.value ? '#0a0a0a' : '#666666',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                  transition: 'all 0.15s ease'
                 }}
               >
                 {t.label}
@@ -419,12 +397,8 @@ const Nearby = () => {
                 setToast({ message: 'Ping failed', type: 'error' })
               }
             }}
-            className="w-full py-4 rounded-2xl font-black text-sm transition-all"
-            style={{
-              background: 'linear-gradient(135deg, #ff6b6b, #ff8e53)',
-              color: '#fff',
-              boxShadow: '0 6px 20px rgba(255,107,107,0.3)'
-            }}
+            className="btn-primary"
+          style={{ width: '100%' }}
           >
             {pingTime === null
               ? `Ping ${selectedFren.name.split(' ')[0]}`
@@ -439,23 +413,21 @@ const Nearby = () => {
 
       {/* Venue Pin Bottom Sheet */}
       {selectedVenue && mode === 'places' && (
-        <BottomSheet onClose={() => setSelectedVenue(null)} title="">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center text-3xl flex-shrink-0"
-              style={{ background: '#1d1928' }}>
-              {selectedVenue.photo ? <img src={selectedVenue.photo} alt="" className="w-full h-full object-cover" /> : selectedVenue.icon}
+        <BottomSheet isOpen={true} onClose={() => setSelectedVenue(null)} title="">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, overflow: 'hidden', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
+              {selectedVenue.photo ? <img src={selectedVenue.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : selectedVenue.icon}
             </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="font-display font-black text-xl leading-tight truncate">{selectedVenue.name}</h2>
-              <p className="text-xs text-white/35 mt-0.5 truncate">{selectedVenue.address}</p>
-              <div className="flex items-center gap-3 mt-1">
-                {selectedVenue.rating && <span className="text-xs text-white/40">★ {selectedVenue.rating}</span>}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 700, color: '#f5f5f5', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedVenue.name}</h2>
+              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#666666', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedVenue.address}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
+                {selectedVenue.rating && <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#666666' }}>★ {selectedVenue.rating}</span>}
                 {selectedVenue.isOpen !== null && (
-                  <span className="text-xs font-bold" style={{ color: selectedVenue.isOpen ? '#6bcb77' : '#ff6b6b' }}>
+                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600, color: selectedVenue.isOpen ? '#4caf7d' : '#ff4d4d' }}>
                     {selectedVenue.isOpen ? 'Open' : 'Closed'}
                   </span>
                 )}
-                {selectedVenue.priceLevel > 0 && <span className="text-xs text-white/25">{'£'.repeat(selectedVenue.priceLevel)}</span>}
               </div>
             </div>
           </div>
@@ -499,9 +471,9 @@ const Nearby = () => {
             </div>
           )}
 
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-3 ml-1">When?</p>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 600, color: '#3a3a3a', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>When?</p>
 
-          <div className="flex flex-wrap gap-2 mb-5">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
             {[
               { label: 'TBD', value: null },
               { label: 'Now', value: 0 },
@@ -515,12 +487,13 @@ const Nearby = () => {
               <button
                 key={String(t.value)}
                 onClick={() => setVenuePingTime(t.value)}
-                className="px-4 py-2 rounded-full text-sm font-bold border transition-all"
                 style={{
-                  background: venuePingTime === t.value ? 'rgba(255,107,107,0.15)' : 'rgba(255,255,255,0.04)',
-                  borderColor: venuePingTime === t.value ? 'rgba(255,107,107,0.5)' : 'rgba(255,255,255,0.08)',
-                  color: venuePingTime === t.value ? '#ff6b6b' : 'rgba(255,255,255,0.35)',
-                  boxShadow: venuePingTime === t.value ? '0 0 12px rgba(255,107,107,0.15)' : 'none'
+                  padding: '8px 16px', borderRadius: 9999,
+                  background: venuePingTime === t.value ? '#f5f5f5' : '#1a1a1a',
+                  color: venuePingTime === t.value ? '#0a0a0a' : '#666666',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                  transition: 'all 0.15s ease'
                 }}
               >
                 {t.label}
@@ -531,13 +504,14 @@ const Nearby = () => {
           <button
             onClick={handleVenuePin}
             disabled={venuePingFrenIds.length === 0 || venuePinning}
-            className="w-full py-4 rounded-2xl font-black text-sm transition-all shadow-lg active:scale-[0.98]"
             style={{
-              background: venuePingFrenIds.length > 0
-                ? 'linear-gradient(135deg, #ff6b6b, #ff8e53)'
-                : 'rgba(255,107,107,0.1)',
-              color: venuePingFrenIds.length > 0 ? '#fff' : 'rgba(255,107,107,0.3)',
-              boxShadow: venuePingFrenIds.length > 0 ? '0 6px 20px rgba(255,107,107,0.3)' : 'none'
+              width: '100%', height: 52,
+              background: venuePingFrenIds.length > 0 ? '#f5f5f5' : '#1a1a1a',
+              color: venuePingFrenIds.length > 0 ? '#0a0a0a' : '#3a3a3a',
+              border: 'none', borderRadius: 12,
+              fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 15,
+              cursor: venuePingFrenIds.length > 0 ? 'pointer' : 'default',
+              transition: 'transform 0.1s ease',
             }}
           >
             {venuePinning ? 'Creating...'
@@ -554,29 +528,30 @@ const Nearby = () => {
 
       {/* Status Picker Bottom Sheet */}
       {showStatusPicker && (
-        <BottomSheet onClose={() => setShowStatusPicker(false)} title="What's your vibe?">
-          <div className="space-y-2 mt-2">
+        <BottomSheet isOpen={showStatusPicker} onClose={() => setShowStatusPicker(false)} title="What's your vibe?">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 20px 32px' }}>
             {[
-              { id: 'free', label: 'Free to hang', icon: '🟢' },
-              { id: 'busy', label: 'Busy', icon: '🔴' },
-              { id: 'maybe', label: 'Maybe later', icon: '🟡' },
-              { id: 'ghost', label: 'Ghost mode (Hide on map)', icon: '👻' },
-              { id: 'inv', label: 'Invisible (Fully hidden)', icon: '🫥' },
+              { id: 'free', label: 'Free to hang', color: '#4caf7d' },
+              { id: 'maybe', label: 'Maybe later', color: '#f5a623' },
+              { id: 'busy', label: 'Busy', color: '#ff4d4d' },
+              { id: 'ghost', label: 'Ghost mode', color: '#9b7fff' },
+              { id: 'inv', label: 'Invisible', color: '#666666' },
             ].map(s => (
               <button
                 key={s.id}
                 onClick={() => handleUpdateStatus(s.id)}
-                className="w-full p-4 rounded-2xl flex items-center justify-between transition-all hover:bg-white/5 active:scale-[0.98]"
+                className="btn-secondary"
                 style={{
-                  background: currentUser?.status === s.id ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
-                  border: currentUser?.status === s.id ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.05)'
+                  height: 56, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px',
+                  background: currentUser?.status === s.id ? '#1a1a1a' : '#111111',
+                  borderColor: currentUser?.status === s.id ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.07)'
                 }}
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{s.icon}</span>
-                  <span className="font-bold">{s.label}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.color }} />
+                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500, color: '#f5f5f5' }}>{s.label}</span>
                 </div>
-                {currentUser?.status === s.id && <div className="w-2 h-2 rounded-full bg-white" />}
+                {currentUser?.status === s.id && <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#4caf7d', border: '2px solid #0a0a0a' }} />}
               </button>
             ))}
           </div>

@@ -3,6 +3,41 @@ import { NavLink } from 'react-router-dom'
 import { getFrenRequests } from '../lib/api'
 import { useStore } from '../store/useStore'
 
+// Simple SVG icons to avoid needing phosphor-react install
+const Icons = {
+  House: () => (
+    <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+      <path d="M9 21V12h6v9" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+    </svg>
+  ),
+  Users: () => (
+    <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+      <circle cx="9" cy="7" r="3" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M3 20c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <circle cx="17" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M21 20c0-2.761-1.791-5-4-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  ),
+  Plus: () => (
+    <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  ),
+  MapPin: () => (
+    <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+      <path d="M12 21s-7-6.895-7-11a7 7 0 1114 0c0 4.105-7 11-7 11z" stroke="currentColor" strokeWidth="1.5"/>
+      <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+    </svg>
+  ),
+  User: () => (
+    <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  ),
+}
+
 const BottomNav = () => {
   const { pendingRequestCount, setPendingRequestCount, activeFab } = useStore()
 
@@ -10,9 +45,7 @@ const BottomNav = () => {
     try {
       const res = await getFrenRequests()
       setPendingRequestCount(res.data.incoming?.length || 0)
-    } catch (err) {
-      // silently fail — user may not be authed yet
-    }
+    } catch {}
   }
 
   useEffect(() => {
@@ -21,69 +54,99 @@ const BottomNav = () => {
     return () => clearInterval(interval)
   }, [])
 
-  const items = [
-    { path: '/', label: 'Feed', icon: '🏠' },
-    { path: '/nearby', label: 'Nearby', icon: '📍' },
-    { path: '/new', label: '+', isFab: true },
-    { path: '/frens', label: 'Frens', icon: '👥', badge: pendingRequestCount },
-    { path: '/profile', label: 'Profile', icon: '👤' },
+  const tabs = [
+    { path: '/', label: 'Home', Icon: Icons.House },
+    { path: '/frens', label: 'Frens', Icon: Icons.Users, badge: pendingRequestCount },
+    { path: '/new', label: null, Icon: Icons.Plus, isFab: true },
+    { path: '/nearby', label: 'Nearby', Icon: Icons.MapPin },
+    { path: '/profile', label: 'Me', Icon: Icons.User },
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 px-6 pb-6 pt-2 safe-bottom">
-      <div className="max-w-md mx-auto glass rounded-[2.5rem] p-2 flex justify-between items-center shadow-2xl relative">
-        {items.map((item) => (
-          item.isFab ? (
-            activeFab ? (
-              activeFab.path ? (
-                <NavLink
-                  key="active-fab"
-                  to={activeFab.path}
-                  className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center text-3xl bg-gradient-to-br shadow-lg -translate-y-8 active:scale-90 transition-all duration-300 from-primary-blue to-blue-400 shadow-primary-blue/30"
-                >
-                  <span className="text-background -ml-0.5">{activeFab.icon}</span>
-                </NavLink>
-              ) : (
-                <button
-                  key="active-fab"
-                  onClick={activeFab.onClick}
-                  className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center text-3xl bg-gradient-to-br shadow-lg -translate-y-8 active:scale-90 transition-all duration-300 from-primary-green to-[#4caf50] shadow-primary-green/30"
-                >
-                  <span className="text-background">{activeFab.icon}</span>
-                </button>
-              )
-            ) : (
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-40 safe-bottom"
+      style={{
+        height: 64,
+        background: '#111111',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+      }}
+    >
+      <div
+        className="max-w-md mx-auto h-full flex items-center justify-around"
+        style={{ paddingLeft: 8, paddingRight: 8 }}
+      >
+        {tabs.map((tab) => {
+          if (tab.isFab) {
+            // Center FAB — slightly elevated
+            const fabTarget = activeFab ?? tab
+            return (
               <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) => `
-                  flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center text-3xl
-                  bg-gradient-to-br from-primary-red to-primary-yellow shadow-lg shadow-primary-red/30
-                  -translate-y-8 active:scale-90 transition-all duration-300
-                  ${isActive ? 'scale-110' : ''}
-                `}
+                key={tab.path}
+                to={fabTarget.path || tab.path}
+                onClick={activeFab?.onClick}
+                className="flex items-center justify-center flex-shrink-0"
+                style={{ width: 48, height: 48, borderRadius: 12, background: '#f5f5f5', color: '#0a0a0a' }}
               >
-                <span className="text-background font-black mb-1">+</span>
+                <tab.Icon />
               </NavLink>
             )
-          ) : (
+          }
+
+          return (
             <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => `
-                relative flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300
-                ${isActive ? 'bg-primary-red/10 text-primary-red scale-110' : 'text-white/30'}
-              `}
+              key={tab.path}
+              to={tab.path}
+              end={tab.path === '/'}
+              className="relative flex-shrink-0"
+              style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              <span className="text-xl mb-0.5">{item.icon}</span>
-              {item.badge > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary-red rounded-full text-background text-[9px] font-black flex items-center justify-center border-2 border-background animate-in zoom-in duration-300">
-                  {item.badge > 9 ? '9+' : item.badge}
-                </span>
+              {({ isActive }) => (
+                <>
+                  {/* Active indicator — 2px line above */}
+                  {isActive && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 4,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: 16,
+                        height: 2,
+                        borderRadius: 1,
+                        background: '#f5f5f5',
+                      }}
+                    />
+                  )}
+                  <div style={{ color: isActive ? '#f5f5f5' : '#3a3a3a', position: 'relative' }}>
+                    <tab.Icon />
+                    {tab.badge > 0 && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: -4,
+                          right: -4,
+                          width: 14,
+                          height: 14,
+                          borderRadius: '50%',
+                          background: '#ff4d4d',
+                          border: '2px solid #111111',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 8,
+                          fontWeight: 600,
+                          color: '#fff',
+                        }}
+                      >
+                        {tab.badge > 9 ? '9+' : tab.badge}
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </NavLink>
           )
-        ))}
+        })}
       </div>
     </nav>
   )

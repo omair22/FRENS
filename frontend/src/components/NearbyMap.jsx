@@ -14,10 +14,10 @@ L.Icon.Default.mergeOptions({
 
 // "You" pulse icon
 const youIcon = L.divIcon({
-    html: `<div style="width:16px;height:16px;background:#4d96ff;border-radius:50%;border:3px solid white;box-shadow:0 0 0 6px rgba(77,150,255,0.3),0 0 0 14px rgba(77,150,255,0.1);"></div>`,
+    html: `<div style="width:14px;height:14px;background:#f5f5f5;border-radius:50%;border:4px solid #0a0a0a;box-shadow:0 0 0 4px rgba(255,255,255,0.05),0 0 0 10px rgba(255,255,255,0.02);"></div>`,
     className: '',
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
 })
 
 const clusterIcon = (frens) => {
@@ -33,8 +33,8 @@ const clusterIcon = (frens) => {
       top:0;
       width:44px;height:44px;
       border-radius:50%;
-      border:3px solid #141020;
-      background:#1a1428;
+      border:3px solid #0a0a0a;
+      background:#111111;
       object-fit:cover;
     " />`
     }).join('')
@@ -44,20 +44,21 @@ const clusterIcon = (frens) => {
         ? `<div style="
         position:absolute;
         right:-8px;top:-8px;
-        background:#ff4d6d;
+        background:#ff4d4d;
         color:white;
+        font-family: 'DM Sans', sans-serif;
         font-size:9px;
-        font-weight:900;
+        font-weight:700;
         border-radius:50%;
         width:20px;height:20px;
         display:flex;align-items:center;justify-content:center;
-        border:2px solid #141020;
+        border:2px solid #0a0a0a;
       ">+${extra}</div>`
         : ''
 
     const nameLine = frens.length === 1
-        ? `<div style="margin-top:6px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.7);text-align:center;white-space:nowrap;">${frens[0].name.split(' ')[0]}</div>`
-        : `<div style="margin-top:6px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.7);text-align:center;">${frens.length} frens</div>`
+        ? `<div style="font-family: 'DM Sans', sans-serif; margin-top:6px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#666666;text-align:center;white-space:nowrap;">${frens[0].name.split(' ')[0]}</div>`
+        : `<div style="font-family: 'DM Sans', sans-serif; margin-top:6px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#666666;text-align:center;">${frens.length} frens</div>`
 
     return L.divIcon({
         html: `<div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;">
@@ -187,21 +188,20 @@ const NearbyMap = ({ frens, venues, venuesLoading, userLocation, onFrenTap, onVe
                         html: `
               <div style="position:relative; display:inline-flex; flex-direction:column; align-items:center;">
                 <div style="
-                  display:flex; align-items:center; gap:4px; padding:4px 8px; border-radius:9999px;
-                  background:#16131f; border:1.5px solid rgba(255,255,255,0.15);
-                  box-shadow:0 4px 12px rgba(0,0,0,0.4); white-space:nowrap;
+                  display:flex; align-items:center; gap:6px; padding:6px 10px; border-radius:12px;
+                  background:#111111; border:1px solid rgba(255,255,255,0.07);
+                  box-shadow:0 8px 16px rgba(0,0,0,0.4); white-space:nowrap;
                 ">
-                  <span style="font-size:12px;">${venue.icon || '📍'}</span>
-                  <span style="font-size:11px; font-weight:700; color:rgba(255,255,255,0.9); max-width:80px; overflow:hidden; text-overflow:ellipsis;">
+                  <span style="font-family: 'DM Sans', sans-serif; font-size:11px; font-weight:600; color:#f5f5f5; max-width:100px; overflow:hidden; text-overflow:ellipsis;">
                     ${venue.name}
                   </span>
-                  ${venue.isOpen === true ? '<div style="width:6px;height:6px;border-radius:50%;background:#6bcb77;flex-shrink:0;"></div>' : ''}
-                  ${venue.isOpen === false ? '<div style="width:6px;height:6px;border-radius:50%;background:#ff6b6b;flex-shrink:0;"></div>' : ''}
+                  ${venue.isOpen === true ? '<div style="width:6px;height:6px;border-radius:50%;background:#4caf7d;flex-shrink:0;"></div>' : ''}
+                  ${venue.isOpen === false ? '<div style="width:6px;height:6px;border-radius:50%;background:#ff4d4d;flex-shrink:0;"></div>' : ''}
                 </div>
                 <div style="
-                  width:8px; height:8px; background:#16131f;
-                  border-right:1.5px solid rgba(255,255,255,0.15);
-                  border-bottom:1.5px solid rgba(255,255,255,0.15);
+                  width:8px; height:8px; background:#111111;
+                  border-right:1px solid rgba(255,255,255,0.07);
+                  border-bottom:1px solid rgba(255,255,255,0.07);
                   transform:rotate(45deg); margin-top:-5px;
                 "></div>
               </div>

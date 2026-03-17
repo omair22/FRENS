@@ -92,9 +92,19 @@ export const STYLE_OPTIONS = {
       values: ['none', 'beardLight', 'beardMajestic', 'beardMedium', 'moustacheFancy', 'moustacheMagnum']
     },
     clothesColor: {
-      label: 'Outfit',
+      label: 'Outfit Color',
       type: 'swatch',
       values: ['ff6b6b', '6bcb77', '4d96ff', 'ffd93d', 'c77dff', 'ff9a3c', 'ffffff', '1a1a2e']
+    },
+    eyes: {
+      label: 'Eyes',
+      type: 'chips',
+      values: ['default', 'closed', 'cry', 'eyeRoll', 'happy', 'hearts', 'side', 'squint', 'surprised', 'wink', 'winkWacky']
+    },
+    mouth: {
+      label: 'Mouth',
+      type: 'chips',
+      values: ['default', 'concerned', 'disbelief', 'eating', 'grimace', 'sad', 'screamOpen', 'serious', 'smile', 'tongue', 'twinkle', 'vomit']
     }
   },
   bottts: {
@@ -151,6 +161,16 @@ export const STYLE_OPTIONS = {
       label: 'Hair Color',
       type: 'swatch',
       values: ['2c1b18', '4a312c', '724133', 'a55728', 'b58143', 'd6b370', 'e8e1e1', 'ecdcbf', 'c93305', 'ff488e', 'a020f0', '1e90ff', '00c04b']
+    },
+    eyes: {
+      label: 'Eyes',
+      type: 'chips',
+      values: ['variant01', 'variant02', 'variant03', 'variant04', 'variant05', 'variant06', 'variant07', 'variant08', 'variant09', 'variant10', 'variant11', 'variant12', 'variant13', 'variant14', 'variant15', 'variant16', 'variant17', 'variant18', 'variant19', 'variant20', 'variant21', 'variant22', 'variant23', 'variant24', 'variant25', 'variant26']
+    },
+    mouth: {
+      label: 'Mouth',
+      type: 'chips',
+      values: ['variant01', 'variant02', 'variant03', 'variant04', 'variant05', 'variant06', 'variant07', 'variant08', 'variant09', 'variant10', 'variant11', 'variant12', 'variant13']
     },
     backgroundColor: {
       label: 'Background',

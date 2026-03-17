@@ -4,17 +4,26 @@ import Avatar from './Avatar'
 const FrenBubble = ({ fren, onClick, showStatus = true }) => (
   <button
     onClick={onClick}
-    className="flex flex-col items-center gap-2 group transition-all active:scale-95 flex-shrink-0"
+    className="flex flex-col items-center gap-2 flex-shrink-0 group"
+    style={{ transition: 'opacity 0.15s ease', width: 56 }}
   >
     <Avatar
       name={fren.name}
       config={fren.avatar_config || {}}
-      size={56}
+      size={44}
       status={showStatus ? fren.status : undefined}
-      className="ring-2 ring-white/5 group-hover:ring-white/20 transition-all"
     />
-    <span className="text-[10px] font-black uppercase tracking-tighter opacity-40 group-hover:opacity-100 transition-opacity whitespace-nowrap w-14 text-center overflow-hidden">
-      {fren.name?.split(' ')[0] || '...'}
+    <span
+      className="text-center w-full overflow-hidden text-ellipsis whitespace-nowrap"
+      style={{
+        fontFamily: 'DM Sans, sans-serif',
+        fontSize: 10,
+        fontWeight: 500,
+        color: '#666666',
+        transition: 'color 0.15s ease',
+      }}
+    >
+      {fren.name?.split(' ')[0] || '—'}
     </span>
   </button>
 )

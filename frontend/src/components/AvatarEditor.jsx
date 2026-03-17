@@ -47,9 +47,18 @@ const AvatarEditor = ({ user, onSave, onClose }) => {
           />
           <div className="flex-1 flex justify-end">
             <button onClick={handleRandomise}
-              className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl active:scale-95 transition-all"
-              style={{ background: 'rgba(255,255,255,0.08)' }}>
-              🎲
+              style={{
+                padding: '8px 16px',
+                borderRadius: 12,
+                background: '#111111',
+                border: '1px solid rgba(255,255,255,0.07)',
+                color: '#666666',
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}>
+              Randomize
             </button>
           </div>
         </div>
@@ -62,16 +71,15 @@ const AvatarEditor = ({ user, onSave, onClose }) => {
               className="flex-shrink-0 flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl transition-all"
               style={{
                 background: selectedStyle === s.id 
-                  ? 'rgba(255,107,107,0.15)' 
-                  : 'rgba(255,255,255,0.05)',
+                  ? '#1a1a1a' 
+                  : '#111111',
                 border: selectedStyle === s.id
-                  ? '2px solid #ff6b6b'
-                  : '2px solid transparent',
-                minWidth: 72
+                  ? '1px solid rgba(255,255,255,0.2)'
+                  : '1px solid rgba(255,255,255,0.07)',
+                minWidth: 80
               }}>
-              <span className="text-2xl">{s.emoji}</span>
               <span className="text-[10px] font-black uppercase tracking-wide"
-                style={{ color: selectedStyle === s.id ? '#ff6b6b' : 'rgba(255,255,255,0.4)' }}>
+                style={{ color: selectedStyle === s.id ? '#f5f5f5' : '#666666' }}>
                 {s.label}
               </span>
             </button>
@@ -118,14 +126,14 @@ const AvatarEditor = ({ user, onSave, onClose }) => {
                       className="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all capitalize whitespace-nowrap"
                       style={{
                         background: localConfig[key] === val 
-                          ? '#ff6b6b' 
-                          : 'rgba(255,255,255,0.07)',
+                          ? '#f5f5f5' 
+                          : '#1a1a1a',
                         color: localConfig[key] === val 
-                          ? '#fff' 
-                          : 'rgba(255,255,255,0.4)',
+                          ? '#0a0a0a' 
+                          : '#666666',
                         border: localConfig[key] === val
                           ? 'none'
-                          : '1px solid rgba(255,255,255,0.08)'
+                          : '1px solid rgba(255,255,255,0.07)'
                       }}>
                       {val === 'none' ? 'None' : val.replace(/([A-Z])/g, ' $1').trim()}
                     </button>
@@ -137,11 +145,12 @@ const AvatarEditor = ({ user, onSave, onClose }) => {
         </div>
 
         {/* Save button */}
-        <div className="px-6 pb-8 pt-2 flex-shrink-0">
+        <div className="px-6 pb-8 pt-4 flex-shrink-0">
           <button
             onClick={() => onSave({ ...localConfig, style: selectedStyle, seed })}
-            className="w-full py-4 rounded-2xl font-black text-base active:scale-95 transition-all shadow-lg"
-            style={{ background: '#ff6b6b', color: '#fff', boxShadow: '0 4px 20px rgba(255,107,107,0.3)' }}>
+            className="btn-primary"
+            style={{ width: '100%', height: 56 }}
+          >
             Save Avatar
           </button>
         </div>

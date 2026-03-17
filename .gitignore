@@ -21,3 +21,7 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Playwright test artifacts
+playwright-report/
+test-results/

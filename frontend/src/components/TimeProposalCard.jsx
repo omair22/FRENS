@@ -1,191 +1,126 @@
-import React, { useState } from 'react'
+import React from 'react'
+import Avatar from './Avatar'
 
-import { useNavigate } from 'react-router-dom'
+const TimeProposalCard = ({ proposal, onVote, myVote, isHost, onAccept, onDelete }) => {
+  const { id, datetime, label, votes } = proposal
 
-// You might need to adjust buildAvatarUrl based on how it's imported in other parts of the app.
-// I will assume it's imported from your utils, or I'll provide a placeholder if it's missing.
-const buildAvatarUrl = (name, config) => {
-    if (config?.url) return config.url
-    const seed = name || 'Fren'
-    return `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(seed)}&backgroundColor=transparent`
-}
+  const inVotes = votes?.filter(v => v.interest === 'in') || []
+  const maybeVotes = votes?.filter(v => v.interest === 'maybe') || []
+  const outVotes = votes?.filter(v => v.interest === 'out') || []
 
-const SLIDER_LABELS = {
-    0: { label: "I'm out", color: '#ff6b6b', emoji: '❌' },
-    25: { label: 'Probably not', color: '#ff9f43', emoji: '😬' },
-    50: { label: 'Maybe', color: '#ffd93d', emoji: '🤔' },
-    75: { label: 'Likely yes', color: '#b8e994', emoji: '😊' },
-    100: { label: 'Perfect!', color: '#6bcb77', emoji: '🙌' },
-}
+  const dateObj = new Date(datetime)
+  const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  const timeStr = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
 
-const getSliderConfig = (val) => {
-    if (val === undefined) return { label: 'Not voted', color: '#ffffff', emoji: '?' }
-    if (val < 50) return SLIDER_LABELS[0]
-    return SLIDER_LABELS[100]
-}
-
-const TimeProposalCard = ({
-    proposal,
-    myVote,
-    isCreatorOrHost,
-    currentUserId,
-    hangoutId,
-    onVote,
-    onAccept,
-    onDelete
-}) => {
-    const [localVote, setLocalVote] = useState(myVote ?? 50)
-    const [hasVoted, setHasVoted] = useState(myVote !== undefined)
-    const navigate = useNavigate()
-    const config = getSliderConfig(localVote)
-
-    // Average interest across all votes
-    const votes = proposal.votes || []
-    const avgInterest = votes.length > 0
-        ? Math.round(votes.reduce((s, v) => s + v.interest, 0) / votes.length)
-        : null
-
-    const avgConfig = avgInterest !== null ? getSliderConfig(avgInterest) : null
-
-    const isMyProposal = proposal.created_by === currentUserId
-    const canDelete = isCreatorOrHost || isMyProposal
-
-    const formattedDate = proposal.proposed_datetime
-        ? new Date(proposal.proposed_datetime).toLocaleDateString('en-GB', {
-            weekday: 'short', day: 'numeric', month: 'short',
-            hour: '2-digit', minute: '2-digit'
-        })
-        : 'TBD'
-
-    return (
-        <div className="rounded-2xl overflow-hidden"
-            style={{ background: '#16131f', border: '1px solid rgba(255,255,255,0.07)' }}>
-
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
-                <div>
-                    <p className="text-sm font-black">{formattedDate}</p>
-                    {proposal.label && (
-                        <p className="text-[11px] text-white/40 mt-0.5">{proposal.label}</p>
-                    )}
-                    <p className="text-[10px] text-white/25 mt-0.5">
-                        by {proposal.proposer?.name || 'someone'}
-                    </p>
-                </div>
-                <div className="flex items-center gap-2">
-                    {/* Voter avatars */}
-                    {votes.length > 0 && (
-                        <div className="flex -space-x-2">
-                            {votes.slice(0, 4).map(v => (
-                                <div key={v.user_id}
-                                    onClick={(e) => { e.stopPropagation(); navigate(`/profile/${v.user_id}`) }}
-                                    className="w-6 h-6 rounded-full overflow-hidden cursor-pointer active:scale-95"
-                                    style={{ border: '1.5px solid #0e0c14' }}>
-                                    <img
-                                        src={buildAvatarUrl(v.voter?.name, v.voter?.avatar_config || {})}
-                                        alt={v.voter?.name}
-                                        className="w-full h-full"
-                                        style={{ background: '#1d1928' }}
-                                    />
-                                </div>
-                            ))}
-                            {votes.length > 4 && (
-                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black"
-                                    style={{ background: '#2a2535', border: '1.5px solid #0e0c14', color: '#fff' }}>
-                                    +{votes.length - 4}
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    {canDelete && (
-                        <button onClick={onDelete}
-                            className="w-7 h-7 rounded-lg bg-red-500/10 flex items-center justify-center text-xs">
-                            🗑️
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {/* Group interest bar */}
-            {votes.length > 0 && avgConfig && (
-                <div className="px-4 pb-2">
-                    <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                            <div
-                                className="h-full rounded-full transition-all duration-500"
-                                style={{
-                                    width: `${avgInterest}%`,
-                                    background: avgConfig.color
-                                }}
-                            />
-                        </div>
-                        <span className="text-[10px] font-bold" style={{ color: avgConfig.color }}>
-                            {avgConfig.emoji} {votes.length} voted
-                        </span>
-                    </div>
-                </div>
-            )}
-
-            {/* My vote buttons */}
-            <div className="px-4 pb-4 pt-1">
-                <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] uppercase tracking-widest font-black text-white/30">
-                        Can you make this time?
-                    </span>
-                    {hasVoted && (
-                        <span className="text-xs font-bold transition-colors"
-                            style={{ color: config.color }}>
-                            {config.emoji} {config.label}
-                        </span>
-                    )}
-                </div>
-
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => {
-                            setLocalVote(100)
-                            setHasVoted(true)
-                            onVote(100)
-                        }}
-                        className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all border ${localVote === 100 ? 'bg-primary-green/20 border-primary-green/50 text-primary-green' : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'}`}
-                    >
-                        🙌 Yes
-                    </button>
-                    <button
-                        onClick={() => {
-                            setLocalVote(0)
-                            setHasVoted(true)
-                            onVote(0)
-                        }}
-                        className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all border ${localVote === 0 ? 'bg-primary-red/20 border-primary-red/50 text-primary-red' : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'}`}
-                    >
-                        ❌ No
-                    </button>
-                </div>
-            </div>
-
-
-            {/* Host accept button — only show if isCreatorOrHost */}
-            {isCreatorOrHost && votes.length > 0 && (
-                <button
-                    onClick={onAccept}
-                    className="w-full py-3 flex items-center justify-center gap-2 font-bold text-sm transition-all"
-                    style={{
-                        borderTop: '1px solid rgba(255,255,255,0.06)',
-                        color: '#6bcb77',
-                        background: 'rgba(107,203,119,0.05)'
-                    }}
-                >
-                    Accept this time
-                    {avgInterest !== null && (
-                        <span className="text-[10px] opacity-60">
-                            · avg {avgInterest}% interest
-                        </span>
-                    )}
-                </button>
-            )}
+  return (
+    <div
+      style={{
+        background: '#111111',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 12,
+        padding: 16,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h4 style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 700, color: '#f5f5f5', margin: 0 }}>
+            {label || dateStr}
+          </h4>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#666666', margin: '2px 0 0' }}>
+            {timeStr}
+          </p>
         </div>
-    )
+        {isHost && (
+          <button
+            onClick={onAccept}
+            className="btn-primary"
+            style={{ height: 32, width: 'auto', padding: '0 12px', fontSize: 12, borderRadius: 8 }}
+          >
+            Pick this
+          </button>
+        )}
+      </div>
+
+      {/* Vote counts */}
+      <div style={{ display: 'flex', gap: 12 }}>
+        {[
+          { label: 'In', count: inVotes.length, color: '#4caf7d', bg: 'rgba(76,175,125,0.1)' },
+          { label: 'Maybe', count: maybeVotes.length, color: '#f5a623', bg: 'rgba(245,166,35,0.1)' },
+          { label: 'Out', count: outVotes.length, color: '#ff4d4d', bg: 'rgba(255,77,77,0.1)' },
+        ].map(s => (
+          <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: s.color }} />
+            <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#666666' }}>
+              <span style={{ color: '#f5f5f5', fontWeight: 600 }}>{s.count}</span> {s.label}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Avatar stack */}
+      {(inVotes.length > 0 || maybeVotes.length > 0) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', marginLeft: 4 }}>
+            {[...inVotes, ...maybeVotes].slice(0, 6).map((v, i) => (
+              <div key={i} style={{ marginLeft: i > 0 ? -8 : 0, zIndex: 10 - i }}>
+                <Avatar name={v.user?.name} config={v.user?.avatar_config || {}} size={24} />
+              </div>
+            ))}
+          </div>
+          {inVotes.length + maybeVotes.length > 6 && (
+            <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3a3a3a' }}>
+              +{inVotes.length + maybeVotes.length - 6} more
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        {[
+          { id: 'in', label: 'In' },
+          { id: 'maybe', label: 'Maybe' },
+          { id: 'out', label: 'Out' },
+        ].map(v => {
+          const isActive = myVote === v.id
+          return (
+            <button
+              key={v.id}
+              onClick={() => onVote(v.id)}
+              style={{
+                flex: 1, height: 36, borderRadius: 8,
+                background: isActive ? '#f5f5f5' : '#1a1a1a',
+                color: isActive ? '#0a0a0a' : '#666666',
+                border: '1px solid rgba(255,255,255,0.07)',
+                fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500,
+                cursor: 'pointer', transition: 'transform 0.1s ease',
+              }}
+              onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+              onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              {v.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {isHost && (
+        <button
+          onClick={onDelete}
+          style={{
+            alignSelf: 'center', background: 'none', border: 'none',
+            fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3a3a3a',
+            cursor: 'pointer', padding: '4px 8px'
+          }}
+        >
+          Remove proposal
+        </button>
+      )}
+    </div>
+  )
 }
 
 export default TimeProposalCard
