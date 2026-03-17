@@ -14,8 +14,8 @@ router.get('/hangout/:id', async (req, res) => {
     .eq('id', id)
     .single()
 
-  const frontendUrl = 'https://frens-navy.vercel.app'
-  const backendUrl = 'https://frens-production-45f9.up.railway.app'
+  const frontendUrl = process.env.FRONTEND_URL || 'https://frens-navy.vercel.app'
+  const backendUrl = process.env.BACKEND_URL || req.protocol + '://' + req.get('host')
 
   if (!hangout) {
     return res.redirect(`${frontendUrl}/h/${id}`)

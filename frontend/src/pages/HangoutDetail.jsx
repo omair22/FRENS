@@ -336,7 +336,13 @@ const ShareSheet = ({ hangout, onClose }) => {
 
   const shareOptions = [
     { icon: <Plus size={20} />, label: 'Copy Link', onClick: handleCopy, color: '#f5f5f5' },
-    { icon: <WhatsappLogo size={20} weight="fill" />, label: 'WhatsApp', onClick: () => window.open(`https://wa.me/?text=${encodeURIComponent('Join me for ' + hangout.title + '! ' + shareUrl)}`), color: '#25D366' },
+    { icon: <WhatsappLogo size={20} weight="fill" />, label: 'WhatsApp', onClick: () => {
+      const text = encodeURIComponent(`Join me for ${hangout.title}! ${shareUrl}`)
+      const waUrl = /Android|iPhone|iPad/i.test(navigator.userAgent) 
+        ? `whatsapp://send?text=${text}` 
+        : `https://api.whatsapp.com/send?text=${text}`
+      window.open(waUrl)
+    }, color: '#25D366' },
     { icon: <InstagramLogo size={20} weight="fill" />, label: 'Instagram', onClick: handleCopy, color: '#E4405F' },
     { icon: <ChatCircleText size={20} weight="fill" />, label: 'iMessage', onClick: () => window.open(`sms:?&body=${encodeURIComponent('Join me for ' + hangout.title + '! ' + shareUrl)}`), color: '#34C759' },
     { icon: <ShareNetwork size={20} />, label: 'More', onClick: handleNativeShare, color: '#666666' },
@@ -921,69 +927,6 @@ const HangoutDetail = () => {
       
       {showInviteSheet && <InviteSheet hangoutId={id} currentRsvps={hangout.rsvps} onClose={() => setShowInviteSheet(false)} onInvited={fetchHangout} />}
 
-      <BottomSheet isOpen={showShareSheet} onClose={() => setShowShareSheet(false)} title="Invite frens">
-        <div style={{ padding: '0 24px 40px', textAlign: 'center' }}>
-          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#666', marginBottom: 24 }}>
-            Anyone with this link can RSVP without an account.
-          </p>
-          
-          <div style={{ 
-            background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)', 
-            borderRadius: 12, padding: '12px 16px', marginBottom: 24,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-          }}>
-            <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#f5f5f5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: 12 }}>
-              {`${window.location.origin}/h/${id}`}
-            </span>
-            <button 
-              onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/h/${id}`)
-                setToast({ message: 'Link copied!', type: 'success' })
-              }}
-              style={{ background: 'none', border: 'none', color: '#f5a623', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-            >
-              COPY
-            </button>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-            {[
-              { icon: <WhatsappLogo size={24} />, label: 'WA', color: '#25D366', url: `https://wa.me/?text=${encodeURIComponent(`Join me for ${hangout.title}! ${window.location.origin}/h/${id}`)}` },
-              { icon: <InstagramLogo size={24} />, label: 'Insta', color: '#E4405F', action: () => {
-                if (navigator.share) {
-                  navigator.share({ title: hangout.title, url: `${window.location.origin}/h/${id}` })
-                } else {
-                  setToast({ message: 'Share not supported on this browser', type: 'info' })
-                }
-              }},
-              { icon: <ChatCircleText size={24} />, label: 'SMS', color: '#007AFF', url: `sms:?body=${encodeURIComponent(`Join me for ${hangout.title}! ${window.location.origin}/h/${id}`)}` },
-              { icon: <ShareNetwork size={24} />, label: 'More', color: '#f5f5f5', action: () => {
-                if (navigator.share) {
-                  navigator.share({ title: hangout.title, url: `${window.location.origin}/h/${id}` })
-                }
-              }}
-            ].map((opt, i) => (
-              <button 
-                key={i}
-                onClick={() => opt.action ? opt.action() : window.open(opt.url, '_blank')}
-                style={{ 
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-                  background: 'none', border: 'none', cursor: 'pointer'
-                }}
-              >
-                <div style={{ 
-                  width: 52, height: 52, borderRadius: 16, background: '#1a1a1a',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: opt.color,
-                  border: '1px solid rgba(255,255,255,0.08)'
-                }}>
-                  {opt.icon}
-                </div>
-                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#666' }}>{opt.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </BottomSheet>
 
     </div>
   )
