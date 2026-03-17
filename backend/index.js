@@ -33,6 +33,10 @@ app.use(cors({
 app.use(express.json())
 
 // Mount routes
+app.get('/api/test', (req, res) => res.json({ message: 'API is working' }))
+app.use('/api/invite', inviteRoutes)
+app.use('/api/og', ogRoutes)
+
 app.use('/api/auth', authRoutes)
 app.use('/api/hangouts', hangoutRoutes)
 app.use('/api/frens', frenRoutes)
@@ -42,8 +46,6 @@ app.use('/api/users', usersRoutes)
 app.use('/api/nearby', nearbyRoutes)
 app.use('/api/notifications', notificationsRoutes)
 app.use('/api/venues', venuesRoutes)
-app.use('/api/invite', inviteRoutes)
-app.use('/api/og', ogRoutes)
 
 // The Sentry error handler must be registered before any other error middleware and after all controllers
 import * as Sentry from "@sentry/node";

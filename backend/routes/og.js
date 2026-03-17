@@ -7,8 +7,9 @@ const router = express.Router()
 // OG meta tags page — crawlers land here
 router.get('/hangout/:id', async (req, res) => {
   const { id } = req.params
-
-  const { data: hangout } = await supabase
+  console.log(`[OG] Request for hangout: ${id}`)
+  
+  const { data: hangout, error } = await supabase
     .from('hangouts')
     .select('title, emoji, datetime, location, creator:users!created_by(name)')
     .eq('id', id)
