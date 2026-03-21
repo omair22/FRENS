@@ -22,11 +22,7 @@ const PORT = process.env.PORT || 5000
 
 // Enable CORS for frontend (standard local vite port or env)
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://frens-navy.vercel.app'
-  ],
+  origin: true, // Dynamically allow incoming origin to fix Vercel strict-matching
   credentials: true
 }))
 
