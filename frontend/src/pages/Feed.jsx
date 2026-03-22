@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getHangouts, getFrends, getSuggest, rsvpHangout, setAvailability } from '../lib/api'
+import { getHangouts, getFrends, rsvpHangout, setAvailability } from '../lib/api'
 import { useStore } from '../store/useStore'
 import HangoutCard from '../components/HangoutCard'
 import FrenBubble from '../components/FrenBubble'
@@ -18,8 +18,6 @@ const Feed = () => {
   const { user, hangouts, frens, unreadCount, setHangouts, setFrens, setToast, setAuthPrompt } = useStore()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [aiSuggestion, setAiSuggestion] = useState(null)
   const [showAvailSheet, setShowAvailSheet] = useState(false)
   const [selectedDay, setSelectedDay] = useState(null)
   const [showPast, setShowPast] = useState(false)
@@ -53,14 +51,12 @@ const Feed = () => {
     if (isRefresh) setRefreshing(true)
     else setLoading(true)
     try {
-      const [hangoutsRes, frensRes, aiRes] = await Promise.all([
+      const [hangoutsRes, frensRes] = await Promise.all([
         getHangouts(),
         getFrends(),
-        getSuggest().catch(() => ({ data: null }))
       ])
       setHangouts(hangoutsRes.data)
       setFrens(frensRes.data)
-      if (aiRes.data) setAiSuggestion(aiRes.data)
     } catch {
       setToast({ message: 'Failed to load feed', type: 'error' })
     } finally {
@@ -222,30 +218,7 @@ const Feed = () => {
           </div>
         )}
 
-        {/* ── AI Suggestion ── */}
-        {aiSuggestion && (
-          <div style={{ marginBottom: 24 }}>
-            <div
-              style={{
-                background: '#111111',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: 12,
-                padding: 16,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                cursor: 'pointer',
-              }}
-              onClick={() => navigate('/new')}
-            >
-              <span style={{ fontSize: 16, flexShrink: 0 }}>✦</span>
-              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#666666', margin: 0, flex: 1, lineHeight: 1.4 }}>
-                {aiSuggestion.reason}
-              </p>
-              <span style={{ color: '#3a3a3a', fontSize: 18, flexShrink: 0 }}>→</span>
-            </div>
-          </div>
-        )}
+
 
         {/* ── Hangouts ── */}
         <div>

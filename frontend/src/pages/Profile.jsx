@@ -238,7 +238,7 @@ const Profile = () => {
               { label: 'This Month', value: stats?.hangoutsThisMonth || 0 },
               { label: 'Total Frens', value: stats?.frensCount || 0 },
               { label: 'Day Streak', value: stats?.streak || 0 },
-              { label: 'Rank', value: 'Inner Circle' },
+
             ].map(s => (
               <div key={s.label} style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 16 }}>
                 <p style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 700, color: '#f5f5f5', margin: '0 0 4px' }}>
@@ -252,7 +252,7 @@ const Profile = () => {
 
         {activeTab === 'hangouts' && (
           <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#3a3a3a', textAlign: 'center', padding: '32px 0' }}>
-            Hangout history coming soon
+            No hangout history yet
           </p>
         )}
       </div>

@@ -146,41 +146,99 @@ router.patch('/status', authMiddleware, async (req, res) => {
  */
 router.get('/stats', authMiddleware, async (req, res) => {
   try {
-    // 1. Get frens count
+    const userId = req.user.id
+
+    // 1. Get confirmed frens count
     const { count: frensCount } = await supabase
       .from('friendships')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', req.user.id)
+      .eq('user_id', userId)
+      .eq('status', 'accepted')
 
-    // 2. Get hangouts this month
+    // 2. Get hangouts participated in this month (RSVP 'in')
     const startOfMonth = new Date()
     startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
 
-    const { count: hangoutsThisMonth } = await supabase
-      .from('hangouts')
-      .select('*', { count: 'exact', head: true })
-      .eq('created_by', req.user.id)
-      .gte('datetime', startOfMonth.toISOString())
+    const { data: myRsvps, error: rsvpError } = await supabase
+      .from('rsvps')
+      .select('hangout_id, hangouts(datetime)')
+      .eq('user_id', userId)
+      .eq('response', 'in')
 
-    // 3. Mock Top Frens
+    if (rsvpError) throw rsvpError
+
+    const attendedHangouts = (myRsvps || [])
+      .map(r => r.hangouts)
+      .filter(h => h && h.datetime)
+      .map(h => ({ ...h, date: h.datetime.split('T')[0] }))
+
+    const hangoutsThisMonth = attendedHangouts.filter(h => new Date(h.datetime) >= startOfMonth).length
+
+    // 3. Calculate Streak (Consecutive days with at least one hangout)
+    const uniqueDates = [...new Set(attendedHangouts.map(h => h.date))].sort().reverse()
+    let streak = 0
+    if (uniqueDates.length > 0) {
+      const today = new Date().toISOString().split('T')[0]
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
+      // Only start counting if the most recent hangout was today or yesterday
+      if (uniqueDates[0] === today || uniqueDates[0] === yesterday) {
+        streak = 1
+        for (let i = 0; i < uniqueDates.length - 1; i++) {
+          const current = new Date(uniqueDates[i])
+          const prev = new Date(uniqueDates[i + 1])
+          const diffInDays = (current - prev) / (1000 * 60 * 60 * 24)
+          if (diffInDays === 1) {
+            streak++
+          } else {
+            break
+          }
+        }
+      }
+    }
+
+    // 4. Real Top Frens (closeness = shared hangouts)
+    // Get all accepted fren IDs
     const { data: friendships } = await supabase
       .from('friendships')
-      .select('fren:users(*)')
-      .eq('user_id', req.user.id)
-      .limit(3)
+      .select('fren_id, fren:users(*)')
+      .eq('user_id', userId)
+      .eq('status', 'accepted')
 
-    const topFrens = (friendships || []).map((f, i) => ({
-      ...f.fren,
-      count: Math.floor(Math.random() * 10) + 1
-    })).sort((a, b) => b.count - a.count)
+    const topFrens = []
+    if (friendships && friendships.length > 0 && myRsvps && myRsvps.length > 0) {
+      const myHangoutIds = new Set(myRsvps.map(r => r.hangout_id))
+      const frenIds = friendships.map(f => f.fren_id)
+
+      const { data: frenRsvps } = await supabase
+        .from('rsvps')
+        .select('user_id, hangout_id')
+        .in('user_id', frenIds)
+        .eq('response', 'in')
+        .in('hangout_id', [...myHangoutIds])
+
+      const closeness = {}
+      frenIds.forEach(id => { closeness[id] = 0 })
+      ;(frenRsvps || []).forEach(r => { closeness[r.user_id]++ })
+
+      friendships.forEach(f => {
+        topFrens.push({
+          ...f.fren,
+          count: closeness[f.fren_id] || 0
+        })
+      })
+      topFrens.sort((a, b) => b.count - a.count)
+    }
 
     res.json({
       frensCount: frensCount || 0,
-      hangoutsThisMonth: hangoutsThisMonth || 0,
-      streak: 5,
-      topFrens
+      hangoutsThisMonth,
+      streak,
+      topFrens: topFrens.slice(0, 5) // Top 5
     })
   } catch (err) {
+    console.error('[STATS ERROR]', err)
     res.status(500).json({ error: err.message })
   }
 })

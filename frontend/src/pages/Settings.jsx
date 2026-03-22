@@ -163,10 +163,13 @@ const Settings = () => {
           <Row
             icon="📧" label="Email"
             description={user?.email ? user.email.slice(0, 2) + '••••@' + user.email.split('@')[1] : 'Not set'}
-            right="›" onClick={() => setToast({ message: 'Email change coming soon', type: 'info' })}
           />
-          <Divider />
-          <Row icon="🔑" label="Change Password" right="›" onClick={() => setActiveModal('password')} />
+          {!user?.isGuest && (
+            <>
+              <Divider />
+              <Row icon="🔑" label="Change Password" right="›" onClick={() => setActiveModal('password')} />
+            </>
+          )}
         </Card>
 
         {/* Notifications */}
