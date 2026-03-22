@@ -272,6 +272,30 @@ router.post('/accept', authMiddleware, async (req, res) => {
 })
 
 /**
+ * POST /api/frens/decline
+ */
+router.post('/decline', authMiddleware, async (req, res) => {
+  if (req.user.isGuest) return res.status(403).json({ error: 'Guests cannot decline frens' })
+  try {
+    const { requestId } = req.body
+    if (!requestId) return res.status(400).json({ error: 'requestId required' })
+
+    const { error } = await supabase
+      .from('friendships')
+      .delete()
+      .eq('id', requestId)
+      .eq('fren_id', req.user.id)
+      .eq('status', 'pending')
+
+    if (error) throw error
+    res.json({ success: true, message: 'Request declined' })
+  } catch (err) {
+    console.error('[DECLINE]', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/**
  * DELETE /api/frens/:id — Remove a fren (both directions)
  */
 router.delete('/:id', authMiddleware, async (req, res) => {

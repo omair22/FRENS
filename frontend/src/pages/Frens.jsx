@@ -68,10 +68,10 @@ const Frens = () => {
     } catch { setToast({ message: 'Failed', type: 'error' }) }
   }
 
-  const handleDecline = async (fromId) => {
+  const handleDecline = async (requestId) => {
     try {
-      await declineFrenRequest(fromId)
-      setRequests(prev => ({ ...prev, incoming: prev.incoming.filter(r => r.id !== fromId) }))
+      await declineFrenRequest(requestId)
+      setRequests(prev => ({ ...prev, incoming: prev.incoming.filter(r => r.requestId !== requestId) }))
     } catch { setToast({ message: 'Failed', type: 'error' }) }
   }
 
@@ -189,7 +189,7 @@ const Frens = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {requests.incoming.map(r => (
                 <div
-                  key={r.id}
+                  key={r.requestId}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '12px 16px',
@@ -198,14 +198,14 @@ const Frens = () => {
                     borderRadius: 12,
                   }}
                 >
-                  <Avatar name={r.name} config={r.avatar_config || {}} size={40} />
+                  <Avatar name={r.from?.name} config={r.from?.avatar_config || {}} size={40} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600, color: '#f5f5f5', margin: 0 }}>{r.name}</p>
+                    <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600, color: '#f5f5f5', margin: 0 }}>{r.from?.name}</p>
                     <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#666666', margin: 0 }}>Wants to be frens</p>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                     <button
-                      onClick={() => handleDecline(r.id)}
+                      onClick={() => handleDecline(r.requestId)}
                       style={{
                         width: 36, height: 36, borderRadius: 8,
                         background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.07)',
@@ -215,7 +215,7 @@ const Frens = () => {
                       ✕
                     </button>
                     <button
-                      onClick={() => handleAccept(r.id)}
+                      onClick={() => handleAccept(r.requestId)}
                       style={{
                         width: 36, height: 36, borderRadius: 8,
                         background: '#f5f5f5', border: 'none',
