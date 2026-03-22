@@ -37,15 +37,19 @@ const HangoutInvite = () => {
     try {
       setLoading(true)
       const res = await getPublicHangout(hangoutId)
-      setHangout(res.data)
+      const mappedHangout = {
+        ...res.data.hangout,
+        guest_rsvps: res.data.guests
+      }
+      setHangout(mappedHangout)
       
       // If user is logged in, find their RSVP
       if (user && !user.isGuest) {
-        const found = res.data.rsvps?.find(r => r.user_id === user.id)
+        const found = mappedHangout.rsvps?.find(r => r.user_id === user.id)
         if (found) setMyRsvp(found.response)
       } else if (guestToken) {
         // Find guest RSVP by token
-        const found = res.data.guest_rsvps?.find(g => g.token === guestToken)
+        const found = mappedHangout.guest_rsvps?.find(g => g.token === guestToken)
         if (found) setMyRsvp(found.response)
       }
     } catch (err) {

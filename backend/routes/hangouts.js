@@ -141,7 +141,17 @@ router.get('/:id', authMiddleware, async (req, res) => {
       ideas = ideasData || []
     } catch (_) { }
 
-    res.json({ ...data, hosts, ideas })
+    // Guests — explicitly grab anonymous guests
+    let guest_rsvps = []
+    try {
+      const { data: guestsData } = await supabase
+        .from('hangout_guests')
+        .select('id, name, response, created_at, token')
+        .eq('hangout_id', req.params.id)
+      guest_rsvps = guestsData || []
+    } catch (_) { }
+
+    res.json({ ...data, hosts, ideas, guest_rsvps })
   } catch (err) {
     console.error('[HANGOUT GET]', err)
     res.status(500).json({ error: err.message })

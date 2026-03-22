@@ -456,8 +456,19 @@ const HangoutDetail = () => {
   const hostIds = (hangout.hosts || []).map(h => h.user_id)
   const isAdmin = isCreator || hostIds.includes(user?.id)
 
-  const going = hangout.rsvps?.filter(r => r.response === 'in' || r.response === 'going') || []
-  const interested = hangout.rsvps?.filter(r => r.response === 'interested') || []
+  // Merge authenticated RSVPs and guest RSVPs into one list for the UI
+  const allRsvps = [
+    ...(hangout.rsvps || []),
+    ...(hangout.guest_rsvps || []).map(g => ({
+      ...g,
+      user_id: `guest_${g.id}`,
+      user: { id: `guest_${g.id}`, name: g.name, isGuest: true }
+    }))
+  ]
+
+  const going = allRsvps.filter(r => r.response === 'in' || r.response === 'going')
+  const interested = allRsvps.filter(r => r.response === 'interested' || r.response === 'maybe')
+  const out = allRsvps.filter(r => r.response === 'out')
 
   const handleRsvpTap = (response) => {
     setPendingResponse(response)
@@ -757,6 +768,22 @@ const HangoutDetail = () => {
                 <div key={r.id || r.user_id || i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <Avatar name={r.user?.name} config={r.user?.avatar_config || {}} size={40} />
                   <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500, color: '#f5f5f5' }}>{r.user?.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {out.length > 0 && (
+          <div style={{ marginTop: 32 }}>
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 600, color: '#3a3a3a', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 16 }}>
+              Can't Make It ({out.length})
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {out.map((r, i) => (
+                <div key={r.id || r.user_id || i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Avatar name={r.user?.name} config={r.user?.avatar_config || {}} size={40} />
+                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500, color: '#666666', textDecoration: 'line-through' }}>{r.user?.name}</span>
                 </div>
               ))}
             </div>
