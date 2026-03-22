@@ -314,12 +314,16 @@ const CoHostModal = ({ hangoutId, currentHosts, onClose, onAdded }) => {
 const ShareSheet = ({ hangout, onClose }) => {
   const { setToast } = useStore()
   
+  // Always use the public domain for sharing, even if testing locally!
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  const domain = isLocal ? 'https://frens-app.com' : window.location.origin
+
   // The 'pretty' link for copying and showing to users
-  const prettyUrl = `${window.location.origin}/h/${hangout.id}`
+  const prettyUrl = `${domain}/h/${hangout.id}`
   
   // The 'OG' link for social previews (WhatsApp, iMessage, etc)
   // Our vercel.json rewrite proxies this to the backend invisibly!
-  const previewUrl = `${window.location.origin}/api/og/hangout/${hangout.id}`
+  const previewUrl = `${domain}/api/og/hangout/${hangout.id}`
 
   const handleCopy = () => {
     navigator.clipboard.writeText(prettyUrl)
