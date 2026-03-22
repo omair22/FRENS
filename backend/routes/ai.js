@@ -45,9 +45,12 @@ router.get('/suggest', authMiddleware, async (req, res) => {
     const frens = users || []
     const availData = availability || []
 
+    // AI feature is currently a placeholder/disabled as per user request
+    return res.json({ suggestion: null, reason: 'AI Scheduling is currently offline.' })
+
     // Call Claude
-    const suggestion = await suggestBestTime(frens, availData)
-    res.json(suggestion)
+    // const suggestion = await suggestBestTime(frens, availData)
+    // res.json(suggestion)
   } catch (err) {
     console.error('[AI SUGGEST]', err)
     res.status(500).json({ error: 'AI Scheduling Error', details: err.message })
