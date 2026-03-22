@@ -124,6 +124,7 @@ const Nearby = () => {
         setVenues(res.data.venues || res.data)
       } catch (err) {
         console.error('[VENUES ERROR]', err)
+        setToast({ message: 'Failed to find places. Please check your API key.', type: 'error' })
         setVenues([])
       } finally {
         setVenuesLoading(false)
