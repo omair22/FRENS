@@ -313,11 +313,16 @@ const CoHostModal = ({ hangoutId, currentHosts, onClose, onAdded }) => {
 // ─── Share Sheet ──────────────────────────────
 const ShareSheet = ({ hangout, onClose }) => {
   const { setToast } = useStore()
+  
+  // The 'pretty' link for copying and showing to users
+  const prettyUrl = `${window.location.origin}/h/${hangout.id}`
+  
+  // The backend 'OG' link for social previews (WhatsApp, iMessage, etc)
   const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-  const shareUrl = `${backendUrl.replace('/api', '')}/api/og/hangout/${hangout.id}`
+  const previewUrl = `${backendUrl.replace('/api', '')}/api/og/hangout/${hangout.id}`
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl)
+    navigator.clipboard.writeText(prettyUrl)
     setToast({ message: 'Link copied!', type: 'success' })
     onClose()
   }
@@ -327,7 +332,7 @@ const ShareSheet = ({ hangout, onClose }) => {
       navigator.share({
         title: hangout.title,
         text: `Join me for ${hangout.title}!`,
-        url: shareUrl,
+        url: previewUrl, // Use preview URL for native shares to preserve card
       }).catch(() => {})
     } else {
       handleCopy()
@@ -337,14 +342,14 @@ const ShareSheet = ({ hangout, onClose }) => {
   const shareOptions = [
     { icon: <Plus size={20} />, label: 'Copy Link', onClick: handleCopy, color: '#f5f5f5' },
     { icon: <WhatsappLogo size={20} weight="fill" />, label: 'WhatsApp', onClick: () => {
-      const text = encodeURIComponent(`Join me for ${hangout.title}! ${shareUrl}`)
+      const text = encodeURIComponent(`Join me for ${hangout.title}! ${previewUrl}`)
       const waUrl = /Android|iPhone|iPad/i.test(navigator.userAgent) 
         ? `whatsapp://send?text=${text}` 
         : `https://api.whatsapp.com/send?text=${text}`
       window.open(waUrl)
     }, color: '#25D366' },
     { icon: <InstagramLogo size={20} weight="fill" />, label: 'Instagram', onClick: handleCopy, color: '#E4405F' },
-    { icon: <ChatCircleText size={20} weight="fill" />, label: 'iMessage', onClick: () => window.open(`sms:?&body=${encodeURIComponent('Join me for ' + hangout.title + '! ' + shareUrl)}`), color: '#34C759' },
+    { icon: <ChatCircleText size={20} weight="fill" />, label: 'iMessage', onClick: () => window.open(`sms:?&body=${encodeURIComponent('Join me for ' + hangout.title + '! ' + previewUrl)}`), color: '#34C759' },
     { icon: <ShareNetwork size={20} />, label: 'More', onClick: handleNativeShare, color: '#666666' },
   ]
 
@@ -359,7 +364,7 @@ const ShareSheet = ({ hangout, onClose }) => {
           <div style={{ fontSize: 24 }}>{hangout.emoji}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600, color: '#f5f5f5', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hangout.title}</p>
-            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#3a3a3a', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shareUrl}</p>
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#3a3a3a', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prettyUrl}</p>
           </div>
         </div>
 
