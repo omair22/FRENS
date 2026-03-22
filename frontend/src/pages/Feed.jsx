@@ -18,6 +18,7 @@ const Feed = () => {
   const { user, hangouts, frens, unreadCount, setHangouts, setFrens, setToast, setAuthPrompt } = useStore()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [showAvailSheet, setShowAvailSheet] = useState(false)
   const [selectedDay, setSelectedDay] = useState(null)
   const [showPast, setShowPast] = useState(false)
