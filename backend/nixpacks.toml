@@ -1,0 +1,5 @@
+[phases.setup]
+nixPkgs = ["...", "nodejs", "pango", "cairo", "fontconfig", "libjpeg_turbo", "giflib"]
+
+[start]
+cmd = "npm start"

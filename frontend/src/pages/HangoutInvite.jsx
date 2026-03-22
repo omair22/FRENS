@@ -20,6 +20,11 @@ const HangoutInvite = () => {
   const [guestToken, setGuestToken] = useState(localStorage.getItem(`frens_guest_token_${hangoutId}`))
   const [myRsvp, setMyRsvp] = useState(null)
   
+  // Guest Name Prompt State
+  const [showNamePrompt, setShowNamePrompt] = useState(false)
+  const [guestNameInput, setGuestNameInput] = useState('')
+  const [pendingRsvp, setPendingRsvp] = useState(null)
+  
   // Suggestion state
   const [showSuggest, setShowSuggest] = useState(false)
   const [suggestion, setSuggestion] = useState('')
@@ -50,7 +55,15 @@ const HangoutInvite = () => {
     }
   }
 
-  const handleRsvp = async (response) => {
+  const handleRsvp = async (response, submittedName = null) => {
+    // Determine if we need to ask for a name
+    const hasName = user?.name || guestToken
+    if (!hasName && !submittedName) {
+      setPendingRsvp(response)
+      setShowNamePrompt(true)
+      return
+    }
+
     if (user && !user.isGuest) {
       // Logic for logged in users (already handled by existing rsvpHangout but we use guest endpoint for simplicity if needed, or just standard)
       // Actually, for consistency, let's use the guest endpoint if we want them to stay on this page
@@ -59,7 +72,7 @@ const HangoutInvite = () => {
 
     try {
       const data = {
-        name: user?.name || 'Guest',
+        name: submittedName || user?.name || 'Guest',
         response,
         token: guestToken
       }
@@ -109,6 +122,7 @@ const HangoutInvite = () => {
 
   const isGoing = myRsvp === 'going'
   const isMaybe = myRsvp === 'maybe'
+  const isOut = myRsvp === 'out'
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] selection:bg-white/10">
@@ -197,10 +211,10 @@ const HangoutInvite = () => {
           </div>
 
           {/* ── RSVP Buttons ── */}
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button
               onClick={() => handleRsvp('going')}
-              className={`flex-1 h-14 rounded-2xl font-bold text-[15px] transition-all flex items-center justify-center gap-2
+              className={`flex-[2] h-14 rounded-2xl font-bold text-[15px] transition-all flex items-center justify-center gap-2
                 ${isGoing ? 'bg-[#f5f5f5] text-[#0a0a0a]' : 'bg-white/10 text-white hover:bg-white/15'}`}
             >
               {isGoing && <Check weight="bold" />}
@@ -212,6 +226,13 @@ const HangoutInvite = () => {
                 ${isMaybe ? 'bg-[#f5f5f5] text-[#0a0a0a]' : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/5'}`}
             >
               Maybe
+            </button>
+            <button
+              onClick={() => handleRsvp('out')}
+              className={`flex-1 h-14 rounded-2xl font-bold text-[15px] transition-all flex items-center justify-center gap-2
+                ${isOut ? 'bg-red-500/20 text-red-500 border border-red-500/30' : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/5'}`}
+            >
+              No
             </button>
           </div>
         </div>
@@ -354,6 +375,54 @@ const HangoutInvite = () => {
                 Send
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Guest Name Prompt Modal ── */}
+      {showNamePrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#111111] border border-white/10 w-full max-w-sm p-6 rounded-[24px] shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-white mb-2" style={{ fontFamily: 'Syne' }}>
+              What's your name?
+            </h3>
+            <p className="text-sm font-['DM_Sans'] text-gray-400 mb-6">
+              Let the host know who is RSVPing.
+            </p>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              if (guestNameInput.trim()) {
+                setShowNamePrompt(false)
+                handleRsvp(pendingRsvp, guestNameInput.trim())
+              }
+            }}>
+              <input 
+                type="text" 
+                autoFocus
+                placeholder="e.g. John Doe" 
+                value={guestNameInput}
+                onChange={e => setGuestNameInput(e.target.value)}
+                className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl p-4 text-white font-['DM_Sans'] mb-6 outline-none focus:border-white/30 transition-colors"
+                style={{ fontFamily: 'DM Sans, sans-serif' }}
+              />
+              <div className="flex gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setShowNamePrompt(false)}
+                  className="flex-1 h-14 rounded-2xl bg-white/5 text-gray-400 font-bold hover:bg-white/10"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={!guestNameInput.trim()}
+                  className="flex-1 h-14 rounded-2xl bg-white text-black font-bold disabled:opacity-50"
+                >
+                  Confirm
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
