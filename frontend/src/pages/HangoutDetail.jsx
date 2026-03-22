@@ -331,6 +331,22 @@ const ShareSheet = ({ hangout, onClose }) => {
     onClose()
   }
 
+  const handleInstagramShare = () => {
+    if (navigator.share) {
+      // On mobile, trigger the native iOS/Android share sheet which includes Instagram
+      navigator.share({
+        title: hangout.title,
+        text: `Join me for ${hangout.title}!`,
+        url: previewUrl,
+      }).catch(() => {})
+    } else {
+      // On desktop, copy the previewUrl so pasting it in DMs successfully fetches the OG card
+      navigator.clipboard.writeText(previewUrl)
+      setToast({ message: 'Link copied! Paste in Instagram DMs', type: 'success' })
+      onClose()
+    }
+  }
+
   const handleNativeShare = () => {
     if (navigator.share) {
       navigator.share({
@@ -352,7 +368,7 @@ const ShareSheet = ({ hangout, onClose }) => {
         : `https://api.whatsapp.com/send?text=${text}`
       window.open(waUrl)
     }, color: '#25D366' },
-    { icon: <InstagramLogo size={20} weight="fill" />, label: 'Instagram', onClick: handleCopy, color: '#E4405F' },
+    { icon: <InstagramLogo size={20} weight="fill" />, label: 'Instagram', onClick: handleInstagramShare, color: '#E4405F' },
     { icon: <ChatCircleText size={20} weight="fill" />, label: 'iMessage', onClick: () => window.open(`sms:?&body=${encodeURIComponent('Join me for ' + hangout.title + '! ' + previewUrl)}`), color: '#34C759' },
     { icon: <ShareNetwork size={20} />, label: 'More', onClick: handleNativeShare, color: '#666666' },
   ]
