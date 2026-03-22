@@ -336,10 +336,10 @@ const ShareSheet = ({ hangout, onClose }) => {
     navigator.clipboard.writeText(previewUrl)
     setToast({ message: 'Link copied! Opening Instagram...', type: 'success' })
     
-    // 2. Automatically try opening the Instagram DM inbox
+    // 2. Automatically try opening the Instagram App
     setTimeout(() => {
-      // Instagram's direct link. On mobile Safari/Chrome, this prompts the OS to open the Instagram App instantly!
-      window.open('https://www.instagram.com/direct/inbox/', '_blank')
+      // Instagram's main link. On mobile Safari/Chrome, this prompts the OS to open the Instagram App!
+      window.open('https://www.instagram.com/', '_blank')
     }, 500)
     
     onClose()
