@@ -332,19 +332,17 @@ const ShareSheet = ({ hangout, onClose }) => {
   }
 
   const handleInstagramShare = () => {
-    if (navigator.share) {
-      // On mobile, trigger the native iOS/Android share sheet which includes Instagram
-      navigator.share({
-        title: hangout.title,
-        text: `Join me for ${hangout.title}!`,
-        url: previewUrl,
-      }).catch(() => {})
-    } else {
-      // On desktop, copy the previewUrl so pasting it in DMs successfully fetches the OG card
-      navigator.clipboard.writeText(previewUrl)
-      setToast({ message: 'Link copied! Paste in Instagram DMs', type: 'success' })
-      onClose()
-    }
+    // 1. Always copy the preview URL first so it perfectly pastes the social card
+    navigator.clipboard.writeText(previewUrl)
+    setToast({ message: 'Link copied! Opening Instagram...', type: 'success' })
+    
+    // 2. Automatically try opening the Instagram DM inbox
+    setTimeout(() => {
+      // Instagram's direct link. On mobile Safari/Chrome, this prompts the OS to open the Instagram App instantly!
+      window.open('https://www.instagram.com/direct/inbox/', '_blank')
+    }, 500)
+    
+    onClose()
   }
 
   const handleNativeShare = () => {
