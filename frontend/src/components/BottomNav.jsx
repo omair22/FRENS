@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { NavLink } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { getFrenRequests } from '../lib/api'
 import { useStore } from '../store/useStore'
 
@@ -39,6 +39,8 @@ const Icons = {
 }
 
 const BottomNav = () => {
+  const navigate = useNavigate()
+  const location = useLocation()
   const { user, pendingRequestCount, setPendingRequestCount, activeFab, setAuthPrompt } = useStore()
 
   const fetchRequestCount = async () => {
@@ -55,7 +57,7 @@ const BottomNav = () => {
   }, [])
 
   const tabs = [
-    { path: '/', label: 'Home', Icon: Icons.House, feature: 'default' },
+    { path: '/', label: 'Home', Icon: Icons.House, feature: 'default', end: true },
     { path: '/frens', label: 'Frens', Icon: Icons.Users, badge: pendingRequestCount, feature: 'add-fren' },
     { path: '/new', label: null, Icon: Icons.Plus, isFab: true, feature: 'create-hangout' },
     { path: '/nearby', label: 'Nearby', Icon: Icons.MapPin, feature: 'nearby' },
@@ -76,87 +78,86 @@ const BottomNav = () => {
         style={{ paddingLeft: 8, paddingRight: 8 }}
       >
         {tabs.map((tab) => {
+          const isActive = tab.end 
+            ? location.pathname === tab.path 
+            : location.pathname.startsWith(tab.path)
+
           const handleClick = (e) => {
+            e.preventDefault()
             if (user?.isGuest) {
-              e.preventDefault()
               setAuthPrompt(tab.feature)
               return
             }
             if (tab.isFab && activeFab?.onClick) {
               activeFab.onClick(e)
+            } else {
+              const targetPath = tab.isFab ? (activeFab?.path || tab.path) : tab.path
+              navigate(targetPath)
             }
           }
 
           if (tab.isFab) {
-            // Center FAB — slightly elevated
-            const fabTarget = activeFab ?? tab
             return (
-              <NavLink
+              <button
                 key={tab.path}
-                to={fabTarget.path || tab.path}
                 onClick={handleClick}
                 className="flex items-center justify-center flex-shrink-0"
-                style={{ width: 48, height: 48, borderRadius: 12, background: '#f5f5f5', color: '#0a0a0a' }}
+                style={{ width: 48, height: 48, borderRadius: 12, background: '#f5f5f5', color: '#0a0a0a', border: 'none', cursor: 'pointer' }}
               >
                 <tab.Icon />
-              </NavLink>
+              </button>
             )
           }
 
           return (
-            <NavLink
+            <button
               key={tab.path}
-              to={tab.path}
-              end={tab.path === '/'}
               onClick={handleClick}
               className="relative flex-shrink-0"
-              style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
             >
-              {({ isActive }) => (
-                <>
-                  {/* Active indicator — 2px line above */}
-                  {isActive && (
+              <>
+                {isActive && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: 16,
+                      height: 2,
+                      borderRadius: 1,
+                      background: '#f5f5f5',
+                    }}
+                  />
+                )}
+                <div style={{ color: isActive ? '#f5f5f5' : '#3a3a3a', position: 'relative' }}>
+                  <tab.Icon />
+                  {tab.badge > 0 && (
                     <div
                       style={{
                         position: 'absolute',
-                        top: 4,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: 16,
-                        height: 2,
-                        borderRadius: 1,
-                        background: '#f5f5f5',
+                        top: -4,
+                        right: -4,
+                        width: 14,
+                        height: 14,
+                        borderRadius: '50%',
+                        background: '#ff4d4d',
+                        border: '2px solid #111111',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 8,
+                        fontWeight: 600,
+                        color: '#fff',
                       }}
-                    />
+                    >
+                      {tab.badge > 9 ? '9+' : tab.badge}
+                    </div>
                   )}
-                  <div style={{ color: isActive ? '#f5f5f5' : '#3a3a3a', position: 'relative' }}>
-                    <tab.Icon />
-                    {tab.badge > 0 && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: -4,
-                          right: -4,
-                          width: 14,
-                          height: 14,
-                          borderRadius: '50%',
-                          background: '#ff4d4d',
-                          border: '2px solid #111111',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 8,
-                          fontWeight: 600,
-                          color: '#fff',
-                        }}
-                      >
-                        {tab.badge > 9 ? '9+' : tab.badge}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </NavLink>
+                </div>
+              </>
+            </button>
           )
         })}
       </div>
