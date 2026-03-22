@@ -296,6 +296,40 @@ router.post('/decline', authMiddleware, async (req, res) => {
 })
 
 /**
+ * POST /api/frens/:id/ping
+ */
+router.post('/:id/ping', authMiddleware, async (req, res) => {
+  if (req.user.isGuest) return res.status(403).json({ error: 'Guests cannot ping frens' })
+  try {
+    const frenId = req.params.id
+    
+    // Verify friendship
+    const { data: relationship } = await supabase
+      .from('friendships')
+      .select('status')
+      .or(`and(user_id.eq.${req.user.id},fren_id.eq.${frenId}),and(user_id.eq.${frenId},fren_id.eq.${req.user.id})`)
+      .eq('status', 'accepted')
+      .maybeSingle()
+
+    if (!relationship) return res.status(403).json({ error: 'Must be frens to ping' })
+
+    const { data: sender } = await supabase.from('users').select('name').eq('id', req.user.id).single()
+    
+    await notify(frenId, {
+      type: 'ping',
+      title: '👋 Ping!',
+      body: `${sender?.name || 'A fren'} just pinged you`,
+      data: { fromUserId: req.user.id, action: 'open_chat' },
+    })
+
+    res.json({ success: true, message: 'Ping sent!' })
+  } catch (err) {
+    console.error('[PING]', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/**
  * DELETE /api/frens/:id — Remove a fren (both directions)
  */
 router.delete('/:id', authMiddleware, async (req, res) => {
