@@ -12,11 +12,11 @@ const PLACES_KEY = process.env.GOOGLE_PLACES_KEY
  */
 router.get('/nearby', authMiddleware, async (req, res) => {
     try {
-        const { lat, lng, category = 'all' } = req.query
+        const { lat, lng, category = 'all', radius = 800 } = req.query
         if (!lat || !lng) return res.status(400).json({ error: 'lat and lng required' })
 
         // Check cache first — skip Google API call if hit
-        const cached = getCached(lat, lng, category)
+        const cached = getCached(lat, lng, category, radius)
         if (cached) {
             return res.json({ venues: cached, cached: true })
         }
@@ -35,7 +35,7 @@ router.get('/nearby', authMiddleware, async (req, res) => {
             const types = ['restaurant', 'cafe', 'bar', 'park']
 
             const results = await Promise.all(
-                types.map(type => fetchPlaces(lat, lng, type))
+                types.map(type => fetchPlaces(lat, lng, type, radius))
             )
 
             // Merge and deduplicate
@@ -49,17 +49,15 @@ router.get('/nearby', authMiddleware, async (req, res) => {
                 }
             }
 
-            // Sort by rating desc, take top 20
-            venues = venues
-                .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-                .slice(0, 20)
+            // Sort by rating desc
+            venues = venues.sort((a, b) => (b.rating || 0) - (a.rating || 0))
         } else {
             const type = categoryMap[category] || 'restaurant'
-            venues = await fetchPlaces(lat, lng, type)
+            venues = await fetchPlaces(lat, lng, type, radius)
         }
 
         // Store in cache
-        setCached(lat, lng, category, venues)
+        setCached(lat, lng, category, radius, venues)
 
         res.json({ venues, cached: false })
     } catch (err) {
@@ -119,10 +117,10 @@ router.get('/:placeId', authMiddleware, async (req, res) => {
 })
 
 // Extracted fetch helper — one place type at a time
-const fetchPlaces = async (lat, lng, type) => {
+const fetchPlaces = async (lat, lng, type, radius) => {
     const url = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json')
     url.searchParams.set('location', `${lat},${lng}`)
-    url.searchParams.set('radius', '800')
+    url.searchParams.set('radius', radius.toString())
     url.searchParams.set('type', type)
     url.searchParams.set('key', PLACES_KEY)
     url.searchParams.set('language', 'en')
@@ -135,7 +133,7 @@ const fetchPlaces = async (lat, lng, type) => {
         return []
     }
 
-    return (data.results || []).slice(0, 10).map(place => ({
+    return (data.results || []).map(place => ({
         id: place.place_id,
         name: place.name,
         category: place.types?.[0] || 'place',

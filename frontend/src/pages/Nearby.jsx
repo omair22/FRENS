@@ -36,6 +36,7 @@ const Nearby = () => {
   const [selectedFren, setSelectedFren] = useState(null)
   const [showPingFlow, setShowPingFlow] = useState(false)
   const [showStatusPicker, setShowStatusPicker] = useState(false)
+  const [searchRadius, setSearchRadius] = useState(800)
 
   // Ping/Pin flows
   const [pingTime, setPingTime] = useState(null)
@@ -43,7 +44,7 @@ const Nearby = () => {
   const [venuePingTime, setVenuePingTime] = useState(null)
   const [venuePinning, setVenuePinning] = useState(false)
 
-  const lastVenueFetchLocation = useRef(null)
+  const venueFetchRef = useRef({ coords: null, category: null, radius: null })
 
   const hasMoved = (newLoc, oldLoc, thresholdMeters = 100) => {
     if (!oldLoc) return true
@@ -106,15 +107,20 @@ const Nearby = () => {
   useEffect(() => {
     if (mode !== 'places' || !coords) return
 
-    if (!hasMoved(coords, lastVenueFetchLocation.current)) {
+    const cacheRef = venueFetchRef.current
+    const categoryChanged = cacheRef.category !== venueCategory
+    const radiusChanged = cacheRef.radius !== searchRadius
+    const moved = hasMoved(coords, cacheRef.coords)
+
+    if (!moved && !categoryChanged && !radiusChanged) {
       return
     }
 
     const load = async () => {
       setVenuesLoading(true)
-      lastVenueFetchLocation.current = coords
+      venueFetchRef.current = { coords, category: venueCategory, radius: searchRadius }
       try {
-        const res = await getNearbyVenues(coords.lat, coords.lng, venueCategory)
+        const res = await getNearbyVenues(coords.lat, coords.lng, venueCategory, searchRadius)
         setVenues(res.data.venues || res.data)
       } catch (err) {
         console.error('[VENUES ERROR]', err)
@@ -125,7 +131,7 @@ const Nearby = () => {
     }
 
     load()
-  }, [mode, venueCategory, coords])
+  }, [mode, venueCategory, coords, searchRadius])
 
   // Handlers
   const handleUpdateStatus = async (newStatus) => {
@@ -231,6 +237,7 @@ const Nearby = () => {
           venues={mode === 'places' ? venues : []}
           venuesLoading={venuesLoading}
           userLocation={coords}
+          radius={mode === 'places' ? searchRadius : 300}
           onFrenTap={(fren) => {
             setSelectedFren(fren)
             setShowPingFlow(true)
@@ -304,6 +311,19 @@ const Nearby = () => {
                 {cat.label}
               </button>
             ))}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16, padding: '0 4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#f5f5f5' }}>Search Radius</span>
+              <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#666666' }}>{searchRadius < 1000 ? `${searchRadius}m` : `${(searchRadius / 1000).toFixed(1)}km`}</span>
+            </div>
+            <input 
+              type="range" min="300" max="5000" step="100" 
+              value={searchRadius} 
+              onChange={e => setSearchRadius(Number(e.target.value))} 
+              style={{ width: '100%', accentColor: '#4d96ff', cursor: 'pointer' }} 
+            />
           </div>
 
           {venuesLoading ? (

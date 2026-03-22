@@ -5,14 +5,14 @@ const TTL_MS = 10 * 60 * 1000 // 10 minutes
  * Round lat/lng to 2 decimal places (~1km grid)
  * Same area = same cache key
  */
-const bucketKey = (lat, lng, category) => {
+const bucketKey = (lat, lng, category, radius = 800) => {
     const bLat = Math.round(parseFloat(lat) * 100) / 100
     const bLng = Math.round(parseFloat(lng) * 100) / 100
-    return `${bLat},${bLng},${category}`
+    return `${bLat},${bLng},${category},${radius}`
 }
 
-export const getCached = (lat, lng, category) => {
-    const key = bucketKey(lat, lng, category)
+export const getCached = (lat, lng, category, radius) => {
+    const key = bucketKey(lat, lng, category, radius)
     const entry = cache.get(key)
     if (entry) {
         if (Date.now() - entry.timestamp > TTL_MS) {
@@ -23,8 +23,8 @@ export const getCached = (lat, lng, category) => {
     }
 }
 
-export const setCached = (lat, lng, category, data) => {
-    const key = bucketKey(lat, lng, category)
+export const setCached = (lat, lng, category, radius, data) => {
+    const key = bucketKey(lat, lng, category, radius)
     cache.set(key, { timestamp: Date.now(), data })
     // Prevent memory leak — cap cache at 100 entries
     if (cache.size > 100) {

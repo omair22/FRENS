@@ -109,7 +109,7 @@ const FlyToLocation = ({ coords }) => {
     return null
 }
 
-const NearbyMap = ({ frens, venues, venuesLoading, userLocation, onFrenTap, onVenueTap }) => {
+const NearbyMap = ({ frens, venues, venuesLoading, userLocation, onFrenTap, onVenueTap, radius = 300 }) => {
     const defaultCenter = userLocation ? [userLocation.lat, userLocation.lng] : [37.7749, -122.4194]
     const frensWithCoords = frens.filter(f => f.lat && f.lng)
     const clusters = clusterFrens(frensWithCoords)
@@ -139,7 +139,7 @@ const NearbyMap = ({ frens, venues, venuesLoading, userLocation, onFrenTap, onVe
                         </Marker>
                         <Circle
                             center={[userLocation.lat, userLocation.lng]}
-                            radius={300}
+                            radius={radius}
                             pathOptions={{ color: '#4d96ff', fillColor: '#4d96ff', fillOpacity: 0.05, weight: 1 }}
                         />
                     </>

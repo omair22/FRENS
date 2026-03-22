@@ -235,8 +235,8 @@ export const getMyStats = getUserStats
 export const updateAvailability = setAvailability
 
 // Venues
-export const getNearbyVenues = (lat, lng, category = 'all') =>
-  api.get(`/venues/nearby?lat=${lat}&lng=${lng}&category=${category}`)
+export const getNearbyVenues = (lat, lng, category = 'all', radius = 800) =>
+  api.get(`/venues/nearby?lat=${lat}&lng=${lng}&category=${category}&radius=${radius}`)
 
 export const getVenueDetails = (placeId) =>
   api.get(`/venues/${placeId}`)
