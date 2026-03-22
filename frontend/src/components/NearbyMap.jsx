@@ -1,76 +1,6 @@
-import React, { useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+import React, { useEffect, useState, useMemo } from 'react'
+import { APIProvider, Map, AdvancedMarker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
 import { buildAvatarUrl } from '../lib/avatar'
-
-// Fix leaflet icons
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-})
-
-// "You" pulse icon
-const youIcon = L.divIcon({
-    html: `<div style="width:14px;height:14px;background:#f5f5f5;border-radius:50%;border:4px solid #0a0a0a;box-shadow:0 0 0 4px rgba(255,255,255,0.05),0 0 0 10px rgba(255,255,255,0.02);"></div>`,
-    className: '',
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-})
-
-const clusterIcon = (frens) => {
-    const visible = frens.slice(0, 3)
-    const extra = frens.length - visible.length
-
-    const imgs = visible.map((f, i) => {
-        const url = buildAvatarUrl(f.name, f.avatar_config || {})
-        const offset = i * 16
-        return `<img src="${url}" style="
-      position:absolute;
-      left:${offset}px;
-      top:0;
-      width:44px;height:44px;
-      border-radius:50%;
-      border:3px solid #0a0a0a;
-      background:#111111;
-      object-fit:cover;
-    " />`
-    }).join('')
-
-    const totalWidth = visible.length * 16 + 44
-    const extraBadge = extra > 0
-        ? `<div style="
-        position:absolute;
-        right:-8px;top:-8px;
-        background:#ff4d4d;
-        color:white;
-        font-family: 'DM Sans', sans-serif;
-        font-size:9px;
-        font-weight:700;
-        border-radius:50%;
-        width:20px;height:20px;
-        display:flex;align-items:center;justify-content:center;
-        border:2px solid #0a0a0a;
-      ">+${extra}</div>`
-        : ''
-
-    const nameLine = frens.length === 1
-        ? `<div style="font-family: 'DM Sans', sans-serif; margin-top:6px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#666666;text-align:center;white-space:nowrap;">${frens[0].name.split(' ')[0]}</div>`
-        : `<div style="font-family: 'DM Sans', sans-serif; margin-top:6px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#666666;text-align:center;">${frens.length} frens</div>`
-
-    return L.divIcon({
-        html: `<div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;">
-      <div style="position:relative;width:${totalWidth}px;height:44px;">${imgs}${extraBadge}</div>
-      ${nameLine}
-    </div>`,
-        className: '',
-        iconSize: [totalWidth + 16, 70],
-        iconAnchor: [(totalWidth + 16) / 2, 52],
-        popupAnchor: [0, -55],
-    })
-}
 
 const dist = (a, b) => {
     const R = 3958.8
@@ -101,129 +31,162 @@ const clusterFrens = (frens, radius = 0.1) => {
     return clusters
 }
 
+// Custom hook to draw a Google Maps Circle
+const MapCircle = ({ center, radius }) => {
+    const map = useMap()
+    const maps = useMapsLibrary('maps')
+    const [circle, setCircle] = useState(null)
+
+    useEffect(() => {
+        if (!map || !maps) return
+        const c = new maps.Circle({
+            strokeColor: '#4d96ff',
+            strokeOpacity: 0.8,
+            strokeWeight: 1,
+            fillColor: '#4d96ff',
+            fillOpacity: 0.05,
+            map,
+            center,
+            radius,
+            clickable: false
+        })
+        setCircle(c)
+        return () => c.setMap(null)
+    }, [map, maps])
+
+    useEffect(() => {
+        if (circle && center && radius != null) {
+            circle.setCenter(center)
+            circle.setRadius(radius)
+        }
+    }, [circle, center, radius])
+
+    return null
+}
+
 const FlyToLocation = ({ coords }) => {
     const map = useMap()
     useEffect(() => {
-        if (coords) map.flyTo([coords.lat, coords.lng], 15, { duration: 1.5 })
+        if (coords && map) {
+            map.panTo({ lat: coords.lat, lng: coords.lng })
+        }
     }, [coords, map])
     return null
 }
 
 const NearbyMap = ({ frens, venues, venuesLoading, userLocation, onFrenTap, onVenueTap, radius = 300 }) => {
-    const defaultCenter = userLocation ? [userLocation.lat, userLocation.lng] : [37.7749, -122.4194]
-    const frensWithCoords = frens.filter(f => f.lat && f.lng)
-    const clusters = clusterFrens(frensWithCoords)
+    const defaultCenter = useMemo(() => userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : { lat: 37.7749, lng: -122.4194 }, [])
+    const frensWithCoords = useMemo(() => frens.filter(f => f.lat && f.lng), [frens])
+    const clusters = useMemo(() => clusterFrens(frensWithCoords), [frensWithCoords])
 
     return (
         <div className="w-full h-full relative z-0">
-            <MapContainer
-                center={defaultCenter}
-                zoom={14}
-                style={{ width: '100%', height: '100%' }}
-                zoomControl={false}
-                attributionControl={false}
-            >
-                <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                    subdomains="abcd"
-                    maxZoom={19}
-                />
+            <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_KEY}>
+                <Map
+                    defaultCenter={defaultCenter}
+                    defaultZoom={15}
+                    mapId={import.meta.env.VITE_GOOGLE_MAP_ID || 'DEMO_MAP_ID'}
+                    disableDefaultUI={true}
+                    gestureHandling={'greedy'}
+                    tilt={45} // Applies the 3D tilt
+                    heading={0}
+                    colorScheme={'DARK'}
+                >
+                    {userLocation && (
+                        <>
+                            <FlyToLocation coords={userLocation} />
+                            <AdvancedMarker position={{ lat: userLocation.lat, lng: userLocation.lng }}>
+                                <div style={{
+                                    width: 14, height: 14, background: '#f5f5f5', borderRadius: '50%',
+                                    border: '4px solid #0a0a0a', boxShadow: '0 0 0 4px rgba(255,255,255,0.05), 0 0 0 10px rgba(255,255,255,0.02)'
+                                }} />
+                            </AdvancedMarker>
+                            <MapCircle center={{ lat: userLocation.lat, lng: userLocation.lng }} radius={radius} />
+                        </>
+                    )}
 
-                {userLocation && (
-                    <>
-                        <FlyToLocation coords={userLocation} />
-                        <Marker position={[userLocation.lat, userLocation.lng]} icon={youIcon}>
-                            <Popup>
-                                <strong>You</strong> — You&rsquo;re here
-                            </Popup>
-                        </Marker>
-                        <Circle
-                            center={[userLocation.lat, userLocation.lng]}
-                            radius={radius}
-                            pathOptions={{ color: '#4d96ff', fillColor: '#4d96ff', fillOpacity: 0.05, weight: 1 }}
-                        />
-                    </>
-                )}
+                    {/* Frens Layer */}
+                    {clusters.map((cluster, i) => {
+                        const visible = cluster.frens.slice(0, 3)
+                        const extra = cluster.frens.length - visible.length
+                        const totalWidth = visible.length * 16 + 44
 
-                {/* Frens Layer */}
-                {clusters.map((cluster, i) => (
-                    <Marker
-                        key={i}
-                        position={[cluster.lat, cluster.lng]}
-                        icon={clusterIcon(cluster.frens)}
-                        eventHandlers={{
-                            click: () => {
-                                if (cluster.frens.length === 1 && onFrenTap) {
-                                    onFrenTap(cluster.frens[0])
-                                }
-                            }
-                        }}
-                    >
-                        {cluster.frens.length > 1 && (
-                            <Popup>
-                                <div style={{ minWidth: 120 }}>
-                                    {cluster.frens.map(f => (
-                                        <div
-                                            key={f.id}
-                                            onClick={() => onFrenTap && onFrenTap(f)}
-                                            style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}
-                                        >
+                        return (
+                            <AdvancedMarker
+                                key={`cluster-${i}`}
+                                position={{ lat: cluster.lat, lng: cluster.lng }}
+                                onClick={() => {
+                                    if (cluster.frens.length === 1 && onFrenTap) onFrenTap(cluster.frens[0])
+                                }}
+                                style={{ transform: 'translate(0, -50%)', zIndex: 100 }}
+                            >
+                                <div style={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <div style={{ position: 'relative', width: totalWidth, height: 44 }}>
+                                        {visible.map((f, i) => (
                                             <img
+                                                key={f.id}
                                                 src={buildAvatarUrl(f.name, f.avatar_config || {})}
-                                                style={{ width: 28, height: 28, borderRadius: '50%', background: '#1a1428' }}
-                                                alt={f.name}
+                                                style={{
+                                                    position: 'absolute', left: i * 16, top: 0,
+                                                    width: 44, height: 44, borderRadius: '50%',
+                                                    border: '3px solid #0a0a0a', background: '#111111', objectFit: 'cover'
+                                                }}
+                                                alt=""
                                             />
-                                            <span style={{ fontWeight: 700, fontSize: 12, color: 'black' }}>{f.name}</span>
-                                        </div>
-                                    ))}
+                                        ))}
+                                        {extra > 0 && (
+                                            <div style={{
+                                                position: 'absolute', right: -8, top: -8,
+                                                background: '#ff4d4d', color: 'white', fontFamily: '"DM Sans", sans-serif',
+                                                fontSize: 9, fontWeight: 700, borderRadius: '50%', width: 20, height: 20,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #0a0a0a'
+                                            }}>+{extra}</div>
+                                        )}
+                                    </div>
+                                    <div style={{
+                                        fontFamily: '"DM Sans", sans-serif', marginTop: 6, fontSize: 9, fontWeight: 600,
+                                        textTransform: 'uppercase', letterSpacing: '.05em', color: '#666666', textAlign: 'center', whiteSpace: 'nowrap',
+                                        background: 'rgba(10,10,10,0.8)', padding: '2px 6px', borderRadius: 4
+                                    }}>
+                                        {cluster.frens.length === 1 ? cluster.frens[0].name.split(' ')[0] : `${cluster.frens.length} frens`}
+                                    </div>
                                 </div>
-                            </Popup>
-                        )}
-                    </Marker>
-                ))}
+                            </AdvancedMarker>
+                        )
+                    })}
 
-                {/* Venues Layer */}
-                {venues.map(venue => {
-                    const venuePin = L.divIcon({
-                        html: `
-              <div style="position:relative; display:inline-flex; flex-direction:column; align-items:center;">
-                <div style="
-                  display:flex; align-items:center; gap:6px; padding:6px 10px; border-radius:12px;
-                  background:#111111; border:1px solid rgba(255,255,255,0.07);
-                  box-shadow:0 8px 16px rgba(0,0,0,0.4); white-space:nowrap;
-                ">
-                  <span style="font-family: 'DM Sans', sans-serif; font-size:11px; font-weight:600; color:#f5f5f5; max-width:100px; overflow:hidden; text-overflow:ellipsis;">
-                    ${venue.name}
-                  </span>
-                  ${venue.isOpen === true ? '<div style="width:6px;height:6px;border-radius:50%;background:#4caf7d;flex-shrink:0;"></div>' : ''}
-                  ${venue.isOpen === false ? '<div style="width:6px;height:6px;border-radius:50%;background:#ff4d4d;flex-shrink:0;"></div>' : ''}
-                </div>
-                <div style="
-                  width:8px; height:8px; background:#111111;
-                  border-right:1px solid rgba(255,255,255,0.07);
-                  border-bottom:1px solid rgba(255,255,255,0.07);
-                  transform:rotate(45deg); margin-top:-5px;
-                "></div>
-              </div>
-            `,
-                        className: '',
-                        iconSize: [0, 0],
-                        iconAnchor: [0, 32],
-                    })
+                    {/* Venues Layer */}
+                    {venues.map(venue => (
+                        <AdvancedMarker
+                            key={`venue-${venue.id}`}
+                            position={{ lat: venue.lat, lng: venue.lng }}
+                            onClick={() => onVenueTap && onVenueTap(venue)}
+                            style={{ transform: 'translate(0, -100%)' }}
+                        >
+                            <div style={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 12,
+                                    background: '#111111', border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 8px 16px rgba(0,0,0,0.4)', whiteSpace: 'nowrap'
+                                }}>
+                                    <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: 11, fontWeight: 600, color: '#f5f5f5', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {venue.name}
+                                    </span>
+                                    {venue.isOpen === true && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#4caf7d', flexShrink: 0 }} />}
+                                    {venue.isOpen === false && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff4d4d', flexShrink: 0 }} />}
+                                </div>
+                                <div style={{
+                                    width: 8, height: 8, background: '#111111',
+                                    borderRight: '1px solid rgba(255,255,255,0.07)',
+                                    borderBottom: '1px solid rgba(255,255,255,0.07)',
+                                    transform: 'rotate(45deg)', marginTop: -5
+                                }} />
+                            </div>
+                        </AdvancedMarker>
+                    ))}
+                </Map>
+            </APIProvider>
 
-                    return (
-                        <Marker
-                            key={venue.id}
-                            position={[venue.lat, venue.lng]}
-                            icon={venuePin}
-                            eventHandlers={{ click: () => onVenueTap && onVenueTap(venue) }}
-                            zIndexOffset={-50}
-                        />
-                    )
-                })}
-            </MapContainer>
-
-            {/* Loading overlay for venues */}
+            {/* Loading overlay */}
             {venuesLoading && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2 rounded-full text-xs font-bold text-white shadow-xl pointer-events-none animate-pulse"
                     style={{ background: 'rgba(22,19,31,0.85)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}>
