@@ -317,9 +317,9 @@ const ShareSheet = ({ hangout, onClose }) => {
   // The 'pretty' link for copying and showing to users
   const prettyUrl = `${window.location.origin}/h/${hangout.id}`
   
-  // The backend 'OG' link for social previews (WhatsApp, iMessage, etc)
-  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-  const previewUrl = `${backendUrl.replace('/api', '')}/api/og/hangout/${hangout.id}`
+  // The 'OG' link for social previews (WhatsApp, iMessage, etc)
+  // Our vercel.json rewrite proxies this to the backend invisibly!
+  const previewUrl = `${window.location.origin}/api/og/hangout/${hangout.id}`
 
   const handleCopy = () => {
     navigator.clipboard.writeText(prettyUrl)

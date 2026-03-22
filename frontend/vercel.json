@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/og/hangout/:id",
+      "destination": "https://caring-wholeness-production-547f.up.railway.app/api/og/hangout/:id"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
