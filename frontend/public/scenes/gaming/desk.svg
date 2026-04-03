@@ -1,0 +1,11 @@
+<svg viewBox="0 0 400 40" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <!-- Desk top surface -->
+  <rect x="0" y="0" width="400" height="40" fill="#1a1208"/>
+  <!-- Top edge highlight -->
+  <rect x="0" y="0" width="400" height="1.5" fill="rgba(255,255,255,0.06)"/>
+  <!-- Subtle wood grain lines -->
+  <line x1="0" y1="12" x2="400" y2="12" stroke="rgba(255,255,255,0.02)" stroke-width="1"/>
+  <line x1="0" y1="24" x2="400" y2="24" stroke="rgba(255,255,255,0.015)" stroke-width="1"/>
+  <!-- Front edge shadow -->
+  <rect x="0" y="36" width="400" height="4" fill="rgba(0,0,0,0.3)"/>
+</svg>

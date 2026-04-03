@@ -235,7 +235,13 @@ export const buildAvatarUrl = (name, config = {}) => {
   })
   
   const query = params.toString()
-  return `https://api.dicebear.com/7.x/${style}/svg?${query}`
+  const finalUrl = `https://api.dicebear.com/7.x/${style}/svg?${query}`
+
+  // In development, proxy through Vite to avoid CORS
+  if (import.meta.env.DEV) {
+    return `/dicebear/7.x/${style}/svg?${query}`
+  }
+  return finalUrl
 }
 
 export const getAvatarUrl = (user, _size) =>

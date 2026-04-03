@@ -10,13 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@pixi/react": "^8.0.5",
     "@sentry/react": "^10.43.0",
     "@supabase/supabase-js": "^2.39.7",
     "@vis.gl/react-google-maps": "^1.7.1",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",
     "axios": "^1.6.7",
+    "gsap": "^3.14.2",
     "phosphor-react": "^1.4.1",
+    "pixi.js": "^8.17.1",
     "postcss": "^8.4.35",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

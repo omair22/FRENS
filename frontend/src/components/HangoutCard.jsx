@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import Avatar from './Avatar'
 import RsvpButtons from './RsvpButtons'
 import CountdownTimer from './CountdownTimer'
+import { detectScene } from '../lib/sceneDetector'
+import GamingScene from './scenes/GamingScene'
 
 const HangoutCard = ({ hangout, onRsvp, currentUserId, archived = false }) => {
   const navigate = useNavigate()
@@ -22,6 +24,8 @@ const HangoutCard = ({ hangout, onRsvp, currentUserId, archived = false }) => {
     : 'Date TBD'
 
   const myRsvp = rsvps?.find(r => r.user_id === currentUserId)?.response
+  const sceneType = detectScene(title)
+  const hasScene = sceneType !== 'default'
 
   return (
     <div
@@ -33,6 +37,13 @@ const HangoutCard = ({ hangout, onRsvp, currentUserId, archived = false }) => {
         opacity: archived ? 0.5 : 1,
       }}
     >
+      {hasScene && sceneType === 'gaming' && (
+        <GamingScene
+          rsvps={rsvps || []}
+          width={typeof window !== 'undefined' ? Math.min(window.innerWidth - 40, 408) : 368}
+          height={200}
+        />
+      )}
       <Link to={`/hangout/${id}`} style={{ display: 'block', textDecoration: 'none' }}>
         <div style={{ padding: 16 }}>
 

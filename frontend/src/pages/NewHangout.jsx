@@ -4,6 +4,10 @@ import { useStore } from '../store/useStore'
 import { createHangout, getHangout, updateHangoutDetails } from '../lib/api'
 import Avatar from '../components/Avatar'
 import DateTimePicker from '../components/DateTimePicker'
+import { detectScene } from '../lib/sceneDetector'
+import GamingScene from '../components/scenes/GamingScene'
+
+
 
 const BackIcon = () => (
   <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
@@ -11,16 +15,27 @@ const BackIcon = () => (
   </svg>
 )
 
-const EMOJI_LIST = ['🍕', '🍻', '☕', '🍔', '🌮', '🎨', '📽️', '🏸', '🎮', '🎸', '💃', '🚶', '🍱', '🧺', '⛸️', '🎳']
-
-const QUICK_TAGS = [
-  { emoji: '🍔', text: 'Grab Food' },
-  { emoji: '☕', text: 'Coffee' },
-  { emoji: '🍻', text: 'Drinks' },
-  { emoji: '🎮', text: 'Gaming' },
-  { emoji: '🚶', text: 'Take a Walk' },
-  { emoji: '📽️', text: 'Movie Night' },
+const MAPPING = [
+  { keywords: ['food', 'pizza', 'burger', 'taco', 'eat', 'dinner', 'lunch', 'breakfast', 'hungry', 'ramen', 'sushi', 'pasta', 'brunch', 'buffet', 'snack', 'restaurant'], emoji: '🍕' },
+  { keywords: ['coffee', 'cafe', 'tea', 'latte', 'starbucks', 'espresso', 'matcha', 'brew', 'caffeine', 'morning'], emoji: '☕' },
+  { keywords: ['drinks', 'bar', 'beer', 'wine', 'alcohol', 'pub', 'party', 'cocktail', 'cheers', 'night out', 'club', 'tequila', 'whiskey', 'gin', 'happy hour'], emoji: '🍻' },
+  { keywords: ['game', 'gaming', 'play', 'xbox', 'ps5', 'computer', 'pc', 'switch', 'nintendo', 'valorant', 'cod', 'minecraft', 'streamer', 'league', 'warzone', 'csgo', 'board game', 'cards'], emoji: '🎮' },
+  { keywords: ['walk', 'park', 'hike', 'outdoor', 'stroll', 'nature', 'mountain', 'trail', 'fresh air', 'wandering', 'jog', 'running', 'run'], emoji: '🚶' },
+  { keywords: ['movie', 'film', 'watch', 'cinema', 'show', 'netflix', 'theater', 'marvel', 'disney', 'horror', 'documentary'], emoji: '🎬' },
+  { keywords: ['study', 'work', 'library', 'focus', 'books', 'learn', 'exam', 'class', 'lecture', 'homework', 'project', 'meeting', 'code', 'coding', 'develop', 'office'], emoji: '📚' },
+  { keywords: ['gym', 'workout', 'train', 'fitness', 'lift', 'weights', 'cardio', 'strength', 'muscle', 'yoga', 'pilates', 'treadmill'], emoji: '💪' },
 ]
+
+
+
+const getAutoEmoji = (title) => {
+  const t = title.toLowerCase()
+  for (const item of MAPPING) {
+    if (item.keywords.some(k => t.includes(k))) return item.emoji
+  }
+  return '✨'
+}
+
 
 const Toggle = ({ value, onChange }) => (
   <button
@@ -35,15 +50,25 @@ const Toggle = ({ value, onChange }) => (
 const NewHangout = () => {
   const { id } = useParams()
   const isEditing = Boolean(id)
-  const { frens, setToast } = useStore()
+  const { frens, setUser, user, setToast } = useStore()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState({ title: '', emoji: '🍕', location: '', notes: '', isTbd: false, invitedFrens: [], datetime: null, end_datetime: null })
+  const [form, setForm] = useState({ title: '', emoji: '✨', location: '', notes: '', isTbd: false, invitedFrens: [], datetime: null, end_datetime: null })
   const [isPublic, setIsPublic] = useState(false)
   const [showEndTime, setShowEndTime] = useState(false)
 
   useEffect(() => {
+    if (isEditing) return
+    const auto = getAutoEmoji(form.title)
+    if (auto !== form.emoji) {
+      setForm(f => ({ ...f, emoji: auto }))
+    }
+  }, [form.title, isEditing])
+
+
+  useEffect(() => {
     if (!isEditing) return
+
     setLoading(true)
     getHangout(id)
       .then(res => {
@@ -109,74 +134,49 @@ const NewHangout = () => {
 
       <form onSubmit={handleSubmit} style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-        {/* Quick tags */}
-        <div>
-          <p className="section-label" style={{ marginBottom: 12 }}>Quick start</p>
-          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', margin: '0 -20px', padding: '0 20px' }}>
-            {QUICK_TAGS.map(t => (
-              <button
-                key={t.text}
-                type="button"
-                onClick={() => setForm(f => ({ ...f, emoji: t.emoji, title: t.text }))}
-                style={{
-                  flexShrink: 0,
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 14px',
-                  background: form.title === t.text ? '#1a1a1a' : '#111111',
-                  border: form.title === t.text ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                }}
-              >
-                <span style={{ fontSize: 14 }}>{t.emoji}</span>
-                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#f5f5f5' }}>{t.text}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Hero Section */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, margin: '0 0 40px' }}>
+          {detectScene(form.title) === 'gaming' && (
+            <div 
+              className="animate-scale-pop"
+              style={{ width: '100%', marginBottom: 20, overflow: 'hidden', borderRadius: 16 }}
+            >
+              <GamingScene 
+                rsvps={[{ user, response: 'in' }]} 
+                width={typeof window !== 'undefined' ? Math.min(window.innerWidth - 40, 450) : 400}
+                height={220}
+              />
+            </div>
+          )}
 
-        {/* Emoji picker */}
-        <div>
-          <p className="section-label" style={{ marginBottom: 12 }}>Vibe</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 8 }}>
-            {EMOJI_LIST.map(e => (
-              <button
-                key={e}
-                type="button"
-                onClick={() => setForm(f => ({ ...f, emoji: e }))}
-                style={{
-                  aspectRatio: 1, borderRadius: 8,
-                  background: form.emoji === e ? '#1a1a1a' : '#111111',
-                  border: form.emoji === e ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
-                  fontSize: 20, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                {e}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Title + Location */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <input
             type="text"
-            placeholder="What's the plan?"
-            className="input-frens"
+            placeholder="Name this hangout..."
+            className="glow-underline"
             value={form.title}
             onChange={e => setForm({ ...form, title: e.target.value })}
-            style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 700, height: 56 }}
+            style={{ 
+              fontFamily: 'Syne, sans-serif', 
+              fontSize: '2rem', 
+              fontWeight: 800, 
+              textAlign: 'center',
+              width: '100%',
+              color: '#f5f5f5',
+              marginTop: 12
+            }}
             required
-          />
-          <input
-            type="text"
-            placeholder="Where? (optional)"
-            className="input-frens"
-            value={form.location}
-            onChange={e => setForm({ ...form, location: e.target.value })}
+            autoFocus
           />
         </div>
+
+        <input
+          type="text"
+          placeholder="Where? (optional)"
+          className="input-frens"
+          value={form.location}
+          onChange={e => setForm({ ...form, location: e.target.value })}
+        />
+
 
         {/* Date & Time */}
         <div style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 16 }}>
@@ -301,5 +301,6 @@ const NewHangout = () => {
     </div>
   )
 }
+
 
 export default NewHangout
