@@ -235,13 +235,30 @@ export const buildAvatarUrl = (name, config = {}) => {
   })
   
   const query = params.toString()
-  const finalUrl = `https://api.dicebear.com/7.x/${style}/svg?${query}`
+  return `https://api.dicebear.com/7.x/${style}/svg?${query}`
+}
 
-  // In development, proxy through Vite to avoid CORS
-  if (import.meta.env.DEV) {
-    return `/dicebear/7.x/${style}/svg?${query}`
-  }
-  return finalUrl
+export const buildAvatarUrlForPixi = (name, config = {}) => {
+  const style = config.style || 'adventurer'
+  const params = new URLSearchParams()
+  const seed = config.seed || name || 'you'
+  params.set('seed', seed)
+  params.set('size', '128')
+  
+  const allowedOptions = STYLE_OPTIONS[style] || {}
+  Object.entries(config).forEach(([key, value]) => {
+    const isGlobal = ['flip', 'rotate', 'scale', 'radius', 'backgroundColor'].includes(key)
+    const isValidOption = allowedOptions[key] !== undefined
+    if ((isGlobal || isValidOption) && value !== undefined && value !== null) {
+      params.set(key, value)
+      const featuresWithProbabilities = ['accessories', 'facialHair', 'earrings', 'glasses']
+      if (featuresWithProbabilities.includes(key) && value !== 'none') {
+        params.set(`${key}Probability`, '100')
+      }
+    }
+  })
+
+  return `https://api.dicebear.com/7.x/${style}/png?${params.toString()}`
 }
 
 export const getAvatarUrl = (user, _size) =>

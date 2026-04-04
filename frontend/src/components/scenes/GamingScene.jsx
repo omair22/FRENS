@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react'
 import * as PIXI from 'pixi.js'
 import gsap from 'gsap'
-import { buildAvatarUrl } from '../../lib/avatar'
+import { buildAvatarUrlForPixi } from '../../lib/avatar'
 
 // ── Texture cache — persists across re-renders ──────────────────
 const textureCache = new Map()
@@ -152,7 +152,7 @@ const GamingScene = ({ rsvps = [], width = 400, height = 200 }) => {
       
       await Promise.all(
         allRsvps.map(async (rsvp, i) => {
-          const url = buildAvatarUrl(
+          const url = buildAvatarUrlForPixi(
             rsvp.user?.name || 'user',
             rsvp.user?.avatar_config || {}
           )
