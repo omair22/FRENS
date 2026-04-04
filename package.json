@@ -3,8 +3,8 @@
   "private": true,
   "scripts": {
     "start": "npm start --prefix backend",
-    "build": "cd frontend && npm ci && npm run build",
-    "postinstall": "npm ci --prefix backend",
+    "build": "cd frontend && npm ci --legacy-peer-deps && npm run build",
+    "postinstall": "npm ci --prefix backend --legacy-peer-deps",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
