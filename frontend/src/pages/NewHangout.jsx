@@ -6,6 +6,7 @@ import Avatar from '../components/Avatar'
 import DateTimePicker from '../components/DateTimePicker'
 import { detectScene } from '../lib/sceneDetector'
 import GamingScene from '../components/scenes/GamingScene'
+import CafeScene from '../components/scenes/CafeScene'
 
 
 
@@ -136,16 +137,24 @@ const NewHangout = () => {
 
         {/* Hero Section */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, margin: '0 0 40px' }}>
-          {detectScene(form.title) === 'gaming' && (
+          {(detectScene(form.title) === 'gaming' || detectScene(form.title) === 'cafe') && (
             <div 
               className="animate-scale-pop"
               style={{ width: '100%', marginBottom: 20, overflow: 'hidden', borderRadius: 16 }}
             >
-              <GamingScene 
-                rsvps={[{ user, response: 'in' }]} 
-                width={typeof window !== 'undefined' ? Math.min(window.innerWidth - 40, 450) : 400}
-                height={220}
-              />
+              {detectScene(form.title) === 'gaming' ? (
+                <GamingScene 
+                  rsvps={[{ user, response: 'in' }]} 
+                  width={typeof window !== 'undefined' ? Math.min(window.innerWidth - 40, 450) : 400}
+                  height={220}
+                />
+              ) : (
+                <CafeScene 
+                  rsvps={[{ user, response: 'in' }]} 
+                  width={typeof window !== 'undefined' ? Math.min(window.innerWidth - 40, 450) : 400}
+                  height={220}
+                />
+              )}
             </div>
           )}
 
