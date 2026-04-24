@@ -480,6 +480,15 @@ const HangoutDetail = () => {
     }))
   ]
 
+  // Add creator to list if not present
+  if (hangout.creator && !allRsvps.some(r => r.user_id === hangout.creator.id)) {
+    allRsvps.push({
+      user_id: hangout.creator.id,
+      response: 'in',
+      user: hangout.creator
+    })
+  }
+
   const going = allRsvps.filter(r => r.response === 'in' || r.response === 'going')
   const interested = allRsvps.filter(r => r.response === 'interested' || r.response === 'maybe')
   const out = allRsvps.filter(r => r.response === 'out')
@@ -559,9 +568,27 @@ const HangoutDetail = () => {
                 {fmt(hangout.datetime)}
                 {hangout.end_datetime && ` — ${new Date(hangout.end_datetime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
               </span>
-            </div>
           </div>
         </div>
+
+        {/* ── Scene Animation ── */}
+        {(detectScene(hangout.title) === 'gaming' || detectScene(hangout.title) === 'cafe') && (
+          <div style={{ marginTop: 24, borderRadius: 24, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#111' }}>
+            {detectScene(hangout.title) === 'gaming' ? (
+              <GamingScene 
+                rsvps={allRsvps.filter(r => r.response === 'in' || r.response === 'going')} 
+                width={typeof window !== 'undefined' ? Math.min(window.innerWidth - 40, 408) : 400}
+                height={200}
+              />
+            ) : (
+              <CafeScene 
+                rsvps={allRsvps.filter(r => r.response === 'in' || r.response === 'going')} 
+                width={typeof window !== 'undefined' ? Math.min(window.innerWidth - 40, 408) : 400}
+                height={200}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Admin Actions ── */}
