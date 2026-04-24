@@ -5,6 +5,10 @@ import RsvpButtons from './RsvpButtons'
 import CountdownTimer from './CountdownTimer'
 import { detectScene } from '../lib/sceneDetector'
 import GamingScene from './scenes/GamingScene'
+import CafeScene from './scenes/CafeScene'
+import GymScene from './scenes/GymScene'
+import ShoppingScene from './scenes/ShoppingScene'
+import GenericScene from './scenes/GenericScene'
 
 const HangoutCard = ({ hangout, onRsvp, currentUserId, archived = false }) => {
   const navigate = useNavigate()
@@ -37,12 +41,17 @@ const HangoutCard = ({ hangout, onRsvp, currentUserId, archived = false }) => {
         opacity: archived ? 0.5 : 1,
       }}
     >
-      {hasScene && sceneType === 'gaming' && (
-        <GamingScene
-          rsvps={rsvps || []}
-          width={typeof window !== 'undefined' ? Math.min(window.innerWidth - 40, 408) : 368}
-          height={200}
-        />
+      {hasScene && (
+        <div style={{ position: 'relative', height: 180, overflow: 'hidden' }}>
+          {sceneType === 'gaming' && <GamingScene rsvps={rsvps || []} width={408} height={180} />}
+          {sceneType === 'cafe' && <CafeScene rsvps={rsvps || []} width={408} height={180} />}
+          {sceneType === 'gym' && <GymScene rsvps={rsvps || []} width={408} height={180} />}
+          {sceneType === 'shopping' && <ShoppingScene rsvps={rsvps || []} width={408} height={180} />}
+          {sceneType === 'photo' && (() => {
+            const parsedLoc = (() => { try { return JSON.parse(location || '{}') } catch { return { address: location } } })()
+            return parsedLoc.photoUrl && <GenericScene bgUrl={parsedLoc.photoUrl} rsvps={rsvps || []} width={408} height={180} />
+          })()}
+        </div>
       )}
       <Link to={`/hangout/${id}`} style={{ display: 'block', textDecoration: 'none' }}>
         <div style={{ padding: 16 }}>

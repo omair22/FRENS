@@ -132,19 +132,25 @@ export const generateBodySVG = (avatarConfig = {}, options = {}) => {
 
   if (outfitType === 'tshirt') {
     leftArm = `
-      <rect x="10" y="24" width="18" height="48" rx="9" fill="${skin}" ${stroke} transform="rotate(25 20 24)"/>
-      <rect x="10" y="24" width="22" height="18" rx="8" fill="${top}" ${stroke} transform="rotate(25 20 24)"/>
+      <rect x="8" y="24" width="28" height="18" rx="8" fill="${top}" ${stroke} transform="rotate(20 8 24)"/>
+      <circle cx="18" cy="46" r="8" fill="${skin}" ${stroke}/>
+      <rect x="10" y="44" width="24" height="22" rx="7" fill="${skin}" ${stroke} transform="rotate(-15 10 44)"/>
     `
     rightArm = `
-      <rect x="92" y="24" width="18" height="48" rx="9" fill="${skin}" ${stroke} transform="rotate(-25 100 24)"/>
-      <rect x="88" y="24" width="22" height="18" rx="8" fill="${top}" ${stroke} transform="rotate(-25 100 24)"/>
+      <rect x="84" y="24" width="28" height="18" rx="8" fill="${top}" ${stroke} transform="rotate(-20 112 24)"/>
+      <circle cx="102" cy="46" r="8" fill="${skin}" ${stroke}/>
+      <rect x="86" y="44" width="24" height="22" rx="7" fill="${skin}" ${stroke} transform="rotate(15 110 44)"/>
     `
   } else {
     leftArm = `
-      <rect x="10" y="24" width="22" height="50" rx="10" fill="${top}" ${stroke} transform="rotate(25 20 24)"/>
+      <rect x="8" y="24" width="28" height="22" rx="9" fill="${top}" ${stroke} transform="rotate(20 8 24)"/>
+      <circle cx="18" cy="46" r="9" fill="${top}" ${stroke}/>
+      <rect x="10" y="44" width="24" height="22" rx="8" fill="${top}" ${stroke} transform="rotate(-15 10 44)"/>
     `
     rightArm = `
-      <rect x="88" y="24" width="22" height="50" rx="10" fill="${top}" ${stroke} transform="rotate(-25 100 24)"/>
+      <rect x="84" y="24" width="28" height="22" rx="9" fill="${top}" ${stroke} transform="rotate(-20 112 24)"/>
+      <circle cx="102" cy="46" r="9" fill="${top}" ${stroke}/>
+      <rect x="86" y="44" width="24" height="22" rx="8" fill="${top}" ${stroke} transform="rotate(15 110 44)"/>
     `
   }
 
@@ -218,12 +224,15 @@ export const generateBodySVG = (avatarConfig = {}, options = {}) => {
       <!-- Torso -->
       <rect x="32" y="24" width="56" height="64" rx="14" fill="${top}" ${stroke}/>
       ${torsoDetails}
+      <!-- Arms -->
       <g transform="rotate(10 32 24)">
         <rect x="18" y="24" width="22" height="50" rx="8" fill="${top}" ${stroke}/>
+        <circle cx="29" cy="74" r="8" fill="${skin}" ${stroke}/>
       </g>
       ${options.hideRightArm ? '' : `
       <g transform="rotate(-10 88 24)">
         <rect x="80" y="24" width="22" height="50" rx="8" fill="${top}" ${stroke}/>
+        <circle cx="91" cy="74" r="8" fill="${skin}" ${stroke}/>
       </g>
       `}
     `

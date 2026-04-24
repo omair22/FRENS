@@ -1,0 +1,36 @@
+<svg viewBox="0 0 70 110" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Door frame — thick wooden surround -->
+  <rect x="0" y="0" width="70" height="110" rx="4" fill="#3d2810"/>
+  <!-- Frame inner shadow -->
+  <rect x="4" y="4" width="62" height="102" rx="2" fill="#2a1c0a"/>
+
+  <!-- Door panel — the actual door (this gets rotated open) -->
+  <g id="door-panel">
+    <!-- Door surface -->
+    <rect x="6" y="6" width="58" height="98" rx="2" fill="#8B4513"/>
+    <!-- Door highlight — top left -->
+    <rect x="8" y="8" width="54" height="94" rx="1" fill="#A0522D" opacity="0.5"/>
+    <!-- Wood grain lines -->
+    <line x1="10" y1="20" x2="60" y2="20" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+    <line x1="10" y1="40" x2="60" y2="40" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+    <line x1="10" y1="60" x2="60" y2="60" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+    <line x1="10" y1="80" x2="60" y2="80" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+    <!-- Upper panel inset -->
+    <rect x="14" y="14" width="42" height="36" rx="3"
+      fill="rgba(0,0,0,0.12)" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+    <!-- Lower panel inset -->
+    <rect x="14" y="58" width="42" height="36" rx="3"
+      fill="rgba(0,0,0,0.12)" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+    <!-- Door knob -->
+    <circle cx="52" cy="57" r="5" fill="#DAA520"/>
+    <circle cx="52" cy="57" r="3.5" fill="#FFD700"/>
+    <circle cx="51" cy="56" r="1.2" fill="rgba(255,255,255,0.4)"/>
+  </g>
+
+  <!-- Frame top detail -->
+  <rect x="0" y="0" width="70" height="8" rx="4" fill="#4a3018"/>
+  <!-- Frame bottom -->
+  <rect x="0" y="104" width="70" height="6" rx="2" fill="#4a3018"/>
+
+</svg>

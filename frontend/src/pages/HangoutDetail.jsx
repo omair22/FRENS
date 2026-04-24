@@ -31,6 +31,12 @@ import { FeedSkeleton as Skeleton } from '../components/Skeleton'
 import BottomSheet from '../components/BottomSheet'
 import TimeProposalCard from '../components/TimeProposalCard'
 import DateTimePicker from '../components/DateTimePicker'
+import GamingScene from '../components/scenes/GamingScene'
+import CafeScene from '../components/scenes/CafeScene'
+import GymScene from '../components/scenes/GymScene'
+import ShoppingScene from '../components/scenes/ShoppingScene'
+import GenericScene from '../components/scenes/GenericScene'
+import { detectScene } from '../lib/sceneDetector'
 
 // ─── Helpers ─────────────────────────────────
 const fmt = (iso) => {
@@ -480,15 +486,6 @@ const HangoutDetail = () => {
     }))
   ]
 
-  // Add creator to list if not present
-  if (hangout.creator && !allRsvps.some(r => r.user_id === hangout.creator.id)) {
-    allRsvps.push({
-      user_id: hangout.creator.id,
-      response: 'in',
-      user: hangout.creator
-    })
-  }
-
   const going = allRsvps.filter(r => r.response === 'in' || r.response === 'going')
   const interested = allRsvps.filter(r => r.response === 'interested' || r.response === 'maybe')
   const out = allRsvps.filter(r => r.response === 'out')
@@ -529,67 +526,48 @@ const HangoutDetail = () => {
           <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: '#f5f5f5', cursor: 'pointer', padding: 0 }}>
             <ArrowLeft size={24} weight="regular" />
           </button>
-          <button 
-            onClick={() => setShowShareSheet(true)}
-            style={{ 
-              background: '#111111', border: '1px solid rgba(255,255,255,0.08)', 
-              borderRadius: 12, width: 40, height: 40, 
-              display: 'flex', alignItems: 'center', justifyContent: 'center', 
-              color: '#f5f5f5', cursor: 'pointer' 
-            }}
-          >
+          <button onClick={() => setShowShareSheet(true)} style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f5f5f5', cursor: 'pointer' }}>
             <ShareNetwork size={20} weight="regular" />
           </button>
         </div>
 
+        {/* ── Scene View ── */}
+        <div style={{ marginBottom: 28, borderRadius: 16, overflow: 'hidden', background: '#111', border: '1px solid rgba(255,255,255,0.08)' }}>
+          {(() => {
+            const sceneType = detectScene(hangout.title, hangout.location)
+            const parsedLoc = (() => { try { return JSON.parse(hangout.location || '{}') } catch { return { address: hangout.location } } })()
+            if (sceneType === 'gaming') return <GamingScene rsvps={allRsvps} width={408} height={200} />
+            if (sceneType === 'cafe') return <CafeScene rsvps={allRsvps} width={408} height={200} />
+            if (sceneType === 'gym') return <GymScene rsvps={allRsvps} width={408} height={200} />
+            if (sceneType === 'shopping') return <ShoppingScene rsvps={allRsvps} width={408} height={200} />
+            if (sceneType === 'photo' && parsedLoc.photoUrl) return <GenericScene bgUrl={parsedLoc.photoUrl} rsvps={allRsvps} width={408} height={200} />
+            return null
+          })()}
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ fontSize: 64, lineHeight: 1 }}>{hangout.emoji || '✨'}</div>
-          
           <div>
             <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 28, fontWeight: 800, color: '#f5f5f5', margin: 0, lineHeight: 1.1 }}>{hangout.title}</h1>
-            <div 
-              style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, cursor: 'pointer' }}
-              onClick={() => navigate(`/profile/${hangout.creator?.id}`)}
-            >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, cursor: 'pointer' }} onClick={() => navigate(`/profile/${hangout.creator?.id}`)}>
               <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#666666' }}>by {hangout.creator?.name}</span>
               <Avatar name={hangout.creator?.name} config={hangout.creator?.avatar_config || {}} size={20} />
             </div>
           </div>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <StatusBadge status={hangout.status} isPublic={hangout.is_public} />
               <CountdownTimer targetDate={hangout.datetime} />
             </div>
-            
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <CalendarBlank size={14} color="#666666" />
               <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#666666' }}>
                 {fmt(hangout.datetime)}
                 {hangout.end_datetime && ` — ${new Date(hangout.end_datetime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
               </span>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* ── Scene Animation ── */}
-        {(detectScene(hangout.title) === 'gaming' || detectScene(hangout.title) === 'cafe') && (
-          <div style={{ marginTop: 24, borderRadius: 24, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#111' }}>
-            {detectScene(hangout.title) === 'gaming' ? (
-              <GamingScene 
-                rsvps={allRsvps.filter(r => r.response === 'in' || r.response === 'going')} 
-                width={typeof window !== 'undefined' ? Math.min(window.innerWidth - 40, 408) : 400}
-                height={200}
-              />
-            ) : (
-              <CafeScene 
-                rsvps={allRsvps.filter(r => r.response === 'in' || r.response === 'going')} 
-                width={typeof window !== 'undefined' ? Math.min(window.innerWidth - 40, 408) : 400}
-                height={200}
-              />
-            )}
-          </div>
-        )}
       </div>
 
       {/* ── Admin Actions ── */}
@@ -680,10 +658,26 @@ const HangoutDetail = () => {
         }}>
           <MapPin size={18} color="#666666" />
           <div style={{ flex: 1 }}>
-            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, color: '#f5f5f5', margin: 0 }}>Itinerary</p>
-            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#3a3a3a', margin: '2px 0 0' }}>
-              {stops.length > 0 ? `${stops.length} stops planned` : 'No stops yet'}
-            </p>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 700, color: '#f5f5f5', marginBottom: 2 }}>
+              {(() => {
+                try {
+                  const loc = JSON.parse(hangout.location || '{}')
+                  return loc.name || loc.address || 'Location TBD'
+                } catch {
+                  return hangout.location || 'Location TBD'
+                }
+              })()}
+            </div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#3a3a3a' }}>
+              {(() => {
+                try {
+                  const loc = JSON.parse(hangout.location || '{}')
+                  return loc.address || ''
+                } catch {
+                  return ''
+                }
+              })()}
+            </div>
           </div>
           {isAdmin ? (
             <button onClick={(e) => { e.stopPropagation(); setShowAddStop(true) }} style={{ background: 'none', border: 'none', color: '#ff4d4d', fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>+ Add</button>

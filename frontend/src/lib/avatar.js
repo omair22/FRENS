@@ -18,12 +18,6 @@ export const AVATAR_STYLES = [
     description: 'Cute robot character'
   },
   {
-    id: 'fun-emoji',
-    label: 'Emoji',
-    emoji: '😎',
-    description: 'Fun emoji face'
-  },
-  {
     id: 'lorelei',
     label: 'Artistic',
     emoji: '🎭',
@@ -127,23 +121,6 @@ export const STYLE_OPTIONS = {
       label: 'Sides',
       type: 'chips',
       values: ['antenna01', 'antenna02', 'cables01', 'cables02', 'round', 'square', 'squareAssymetric']
-    }
-  },
-  'fun-emoji': {
-    backgroundColor: {
-      label: 'Background',
-      type: 'swatch',
-      values: ['fcbc34', 'd84be5', 'd9915b', 'f6d594', '059ff2', '71cf62', 'transparent']
-    },
-    eyes: {
-      label: 'Eyes',
-      type: 'chips',
-      values: ['plain', 'sad', 'tearDrop', 'pissed', 'cute', 'wink', 'wink2', 'glasses', 'closed', 'love', 'stars', 'shades', 'closed2', 'crying', 'sleepClose']
-    },
-    mouth: {
-      label: 'Mouth',
-      type: 'chips',
-      values: ['plain', 'lilSmile', 'sad', 'shy', 'cute', 'wideSmile', 'shout', 'smileTeeth', 'smileLol', 'pissed', 'drip', 'tongueOut', 'kissHeart', 'sick', 'faceMask']
     }
   },
   lorelei: {
