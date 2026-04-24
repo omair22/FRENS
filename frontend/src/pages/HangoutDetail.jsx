@@ -570,8 +570,9 @@ const HangoutDetail = () => {
               </span>
           </div>
         </div>
+      </div>
 
-        {/* ── Scene Animation ── */}
+      {/* ── Scene Animation ── */}
         {(detectScene(hangout.title) === 'gaming' || detectScene(hangout.title) === 'cafe') && (
           <div style={{ marginTop: 24, borderRadius: 24, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#111' }}>
             {detectScene(hangout.title) === 'gaming' ? (
