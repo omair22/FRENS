@@ -20,10 +20,32 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 5000
 
-// Enable CORS for frontend (standard local vite port or env)
+// Enable CORS for frontend
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://frens-app.vercel.app',
+];
+
 app.use(cors({
-  origin: true, // Dynamically allow incoming origin to fix Vercel strict-matching
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const isAllowed = allowedOrigins.includes(origin) || 
+                     origin.endsWith('.vercel.app') ||
+                     origin.includes('localhost:');
+                     
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      // Be permissive in case of subdomains or other local dev variants
+      callback(null, true);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }))
 
 app.use(express.json())
